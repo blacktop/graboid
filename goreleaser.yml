@@ -1,0 +1,25 @@
+build:
+  binary: graboid
+  goos:
+    - windows
+    - darwin
+    - linux
+  goarch:
+    - amd64
+  # hooks:
+  #   post: /bin/sh install/scripts/upx.sh
+archive:
+  format: tar.gz
+  format_overrides:
+    - goos: windows
+      format: zip
+  replacements:
+    amd64: amd64
+    darwin: macOS
+    linux: linux
+    windows: win
+brew:
+  github:
+    owner: blacktop
+    name: homebrew-tap
+  folder: Formula
