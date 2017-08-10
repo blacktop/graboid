@@ -12,6 +12,12 @@ graboid
 Getting Started
 ---------------
 
+Install on macOS
+
+```sh
+$ brew install blacktop/tap/graboid
+```
+
 ```sh
 $ graboid blacktop/scifgif
 ```
