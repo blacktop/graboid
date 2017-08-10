@@ -3,6 +3,8 @@ package main
 import (
 	"errors"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"text/tabwriter"
 	"time"
@@ -104,6 +106,43 @@ func CmdCurlme(args []string) {
 		token, registry.RegistryHost, args[1])
 }
 
+// DownloadImage downloads docker image
+func DownloadImage(args []string) {
+	// Create the file
+	out, err := os.Create(fmt.Sprintf("%s.tar", args[0]))
+	if err != nil {
+		log.WithError(err).Error("create file failed")
+	}
+	defer out.Close()
+
+	registry, token := initRegistry(args[0])
+	url := fmt.Sprintf("%s/v1/images/%s/layer", registry.RegistryHost, args[1])
+
+	req, err := http.NewRequest("GET", url, nil)
+	req.Header.Add("Authorization", fmt.Sprintf("Token %s", token))
+
+	client := &http.Client{
+	// CheckRedirect: redirectPolicyFunc,
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	defer resp.Body.Close()
+
+	log.WithFields(log.Fields{
+		"status":   resp.Status,
+		"size":     resp.ContentLength,
+		"filepath": fmt.Sprintf("%s.tar", args[0]),
+	}).Debug("downloading file")
+
+	// Writer the body to file
+	_, err = io.Copy(out, resp.Body)
+	if err != nil {
+		log.WithError(err).Error("writing file failed")
+	}
+}
+
 var appHelpTemplate = `Usage: {{.Name}} {{if .Flags}}[OPTIONS] {{end}}COMMAND [arg...]
 {{.Usage}}
 Version: {{.Version}}{{if or .Author .Email}}
@@ -181,6 +220,7 @@ func main() {
 			CmdInfo(c.Args())
 			CmdLayerInfo(c.Args())
 			CmdCurlme(c.Args())
+			DownloadImage(c.Args())
 		} else {
 			return errors.New("please supply a image to pull")
 		}
