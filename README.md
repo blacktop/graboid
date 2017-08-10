@@ -1,3 +1,5 @@
+![logo](https://github.com/blacktop/graboid/raw/master/graboids.png)
+
 graboid
 =======
 
