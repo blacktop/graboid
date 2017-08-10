@@ -1,7 +1,7 @@
 graboid
 =======
 
-[![Circle CI](https://circleci.com/gh/blacktop/graboid.png?style=shield)](https://circleci.com/gh/blacktop/graboid) [![License](http://img.shields.io/:license-mit-blue.svg)](http://doge.mit-license.org) [![Docker Stars](https://img.shields.io/docker/stars/blacktop/graboid.svg)](https://store.docker.com/community/images/blacktop/graboid) [![Docker Pulls](https://img.shields.io/docker/pulls/blacktop/graboid.svg)](https://store.docker.com/community/images/blacktop/graboid) [![Docker Image](https://img.shields.io/badge/docker%20image-2GB-blue.svg)](https://store.docker.com/community/images/blacktop/graboid)
+[![Circle CI](https://circleci.com/gh/blacktop/graboid.png?style=shield)](https://circleci.com/gh/blacktop/graboid) [![License](http://img.shields.io/:license-mit-blue.svg)](http://doge.mit-license.org)
 
 > Docker Image Downloader
 
