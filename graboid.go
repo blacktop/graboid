@@ -50,8 +50,13 @@ func initRegistry(reposName string) (*Registry, string) {
 	return registry, token
 }
 
+// CmdInfo get docker image metadata info
 func CmdInfo(args []string) {
 	registry, token := initRegistry(args[0])
+	log.WithFields(log.Fields{
+		"registry": registry,
+		"token":    token,
+	}).Info("initRegistry")
 	tags, err := registry.ReposTags(token, args[0])
 	if err != nil {
 		log.Fatal(err.Error())
@@ -66,6 +71,7 @@ func CmdInfo(args []string) {
 	w.Flush()
 }
 
+// CmdLayerInfo gets docker image layer info
 func CmdLayerInfo(args []string) {
 	registry, token := initRegistry(args[0])
 	info, err := registry.LayerJson(token, args[1])
@@ -91,6 +97,7 @@ func CmdLayerInfo(args []string) {
 	w.Flush()
 }
 
+// CmdCurlme outputs curl command to pull image layer
 func CmdCurlme(args []string) {
 	registry, token := initRegistry(args[0])
 	fmt.Printf("curl -i --location-trusted -I -X GET -H \"Authorization: Token %s\" %s/v1/images/%s/layer\n",
@@ -135,6 +142,34 @@ func main() {
 			Usage:  "elasticsearch timeout (in seconds)",
 			EnvVar: "TIMEOUT",
 		},
+		cli.StringFlag{
+			Name:        "index,i",
+			Value:       "https://index.docker.io",
+			Usage:       "override index endpoint",
+			EnvVar:      "GRABOID_INDEX",
+			Destination: &IndexDomain,
+		},
+		cli.StringFlag{
+			Name:        "registry,r",
+			Value:       "",
+			Usage:       "override registry endpoint",
+			EnvVar:      "GRABOID_REGISTRY",
+			Destination: &RegistryDomain,
+		},
+		cli.StringFlag{
+			Name:        "user,u",
+			Value:       "",
+			Usage:       "registry username",
+			EnvVar:      "GRABOID_USERNAME",
+			Destination: &user,
+		},
+		cli.StringFlag{
+			Name:        "password, p",
+			Value:       "",
+			Usage:       "registry password",
+			EnvVar:      "GRABOID_PASSWORD",
+			Destination: &passwd,
+		},
 	}
 	app.Action = func(c *cli.Context) error {
 
@@ -144,6 +179,8 @@ func main() {
 
 		if c.Args().Present() {
 			CmdInfo(c.Args())
+			CmdLayerInfo(c.Args())
+			CmdCurlme(c.Args())
 		} else {
 			return errors.New("please supply a image to pull")
 		}
