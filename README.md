@@ -18,8 +18,16 @@ Install on macOS
 $ brew install blacktop/tap/graboid
 ```
 
+Download docker image `blacktop/scifgif`
+
 ```sh
 $ graboid blacktop/scifgif
+```
+
+Import into docker
+
+```sh
+$ docker load -i scifgif.tar
 ```
 
 ### Issues
