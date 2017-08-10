@@ -4,8 +4,14 @@
 [[projects]]
   branch = "master"
   name = "github.com/apex/log"
-  packages = ["."]
+  packages = [".","handlers/cli"]
   revision = "0296d6eb16bb28f8a0c55668affcf4876dc269be"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/dustin/go-humanize"
+  packages = ["."]
+  revision = "259d2a102b871d17f30e3cd9881a642961a1e486"
 
 [[projects]]
   name = "github.com/pkg/errors"
@@ -22,6 +28,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "2af64c157f6595adbe01db1ff28d54aed3f3a056d7b020a88c6f8850beae0efd"
+  inputs-digest = "b827e43c6f468f997ae7eb44fa3cf10d471a301affb404097c32320f84009fc5"
   solver-name = "gps-cdcl"
   solver-version = 1
