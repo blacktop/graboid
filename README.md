@@ -1,4 +1,4 @@
-![logo](https://github.com/blacktop/graboid/raw/master/graboids.png)
+![logo](https://github.com/blacktop/graboid/raw/master/graboids.jpg)
 
 graboid
 =======
