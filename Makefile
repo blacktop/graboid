@@ -1,7 +1,7 @@
 REPO=blacktop
 NAME=graboid
 VERSION=$(shell cat VERSION)
-MESSAGE?="New release"
+MESSAGE?="New release $VERSION"
 
 # TODO remove \|/templates/\|/api
 SOURCE_FILES?=$$(go list ./... | grep -v /vendor/)

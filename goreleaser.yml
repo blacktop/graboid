@@ -23,3 +23,7 @@ brew:
     owner: blacktop
     name: homebrew-tap
   folder: Formula
+  homepage: "https://github.com/blacktop/graboid"
+  description: "Clientless docker image downloader."
+  test: |
+    system "#{bin}/graboid --version"      
