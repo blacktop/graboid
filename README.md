@@ -21,5 +21,3 @@ Find a bug? Want more features? Find something missing in the documentation? Let
 ### License
 
 MIT Copyright (c) 2017 **blacktop**
-
-![giphy](https://raw.githubusercontent.com/blacktop/scifgif/master/docs/PoweredBy_200_Horizontal_Light-Backgrounds_With_Logo.gif)
