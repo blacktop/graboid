@@ -5,7 +5,7 @@ graboid
 
 [![Circle CI](https://circleci.com/gh/blacktop/graboid.png?style=shield)](https://circleci.com/gh/blacktop/graboid) [![License](http://img.shields.io/:license-mit-blue.svg)](http://doge.mit-license.org)
 
-> Docker Image Downloader
+> Client-less Docker Image Downloader
 
 ---
 
