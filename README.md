@@ -1,7 +1,7 @@
 ![logo](https://github.com/blacktop/graboid/raw/master/graboids.jpg)
 
-graboid
-=======
+graboid [WIP] :construction:
+============================
 
 [![Circle CI](https://circleci.com/gh/blacktop/graboid.png?style=shield)](https://circleci.com/gh/blacktop/graboid) [![License](http://img.shields.io/:license-mit-blue.svg)](http://doge.mit-license.org)
 
