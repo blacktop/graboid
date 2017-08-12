@@ -31,6 +31,15 @@ var (
 	passwd string
 )
 
+// Manifest docker image manifest
+type Manifest struct {
+	Config   string
+	Layers   []string
+	RepoTags []string
+}
+
+var repositories map[string]map[string]string
+
 func init() {
 	log.SetHandler(clihander.Default)
 	ctx = log.WithFields(log.Fields{
