@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strings"
 	"text/tabwriter"
 	"time"
 
@@ -109,7 +110,7 @@ func CmdCurlme(args []string) {
 // DownloadImage downloads docker image
 func DownloadImage(args []string) {
 	// Create the file
-	out, err := os.Create(fmt.Sprintf("%s.tar", args[0]))
+	out, err := os.Create(fmt.Sprintf("%s.tar", strings.Replace(args[0], "/", "_", 1)))
 	if err != nil {
 		log.WithError(err).Error("create file failed")
 	}
