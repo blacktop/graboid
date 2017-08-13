@@ -1,18 +1,18 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
-	"net/http"
+	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strings"
 	"text/tabwriter"
 	"time"
 
 	"github.com/apex/log"
 	clihander "github.com/apex/log/handlers/cli"
-	humanize "github.com/dustin/go-humanize"
 	"github.com/urfave/cli"
 )
 
@@ -26,6 +26,10 @@ var (
 	IndexDomain string
 	// RegistryDomain is the registry domain
 	RegistryDomain string
+	// ImageName is the docker image to pull
+	ImageName string
+	// ImageTag is the docker image tag to pull
+	ImageTag string
 	// creds
 	user   string
 	passwd string
@@ -42,115 +46,110 @@ var repositories map[string]map[string]string
 
 func init() {
 	log.SetHandler(clihander.Default)
-	ctx = log.WithFields(log.Fields{
-		"file": "something.png",
-		"type": "image/png",
-		"user": "tobi",
-	})
 }
 
-func initRegistry(reposName string) (*Registry, string) {
+func initRegistry(reposName string) *Registry {
 	registry, err := NewRegistry(IndexDomain, RegistryDomain)
 	if err != nil {
 		ctx.Fatal(err.Error())
 	}
-	ctx.Infof("Getting token from %s", IndexDomain)
-	token, err := registry.GetToken(user, passwd, reposName)
+	log.Info("getting auth token")
+	err = registry.GetToken(user, passwd, reposName)
 	if err != nil {
 		ctx.Fatal(err.Error())
 	}
-	return registry, token
+	return registry
 }
 
 // CmdInfo get docker image metadata info
-func CmdInfo(args []string) {
-	registry, token := initRegistry(args[0])
-	log.WithFields(log.Fields{
-		"registry": registry,
-		"token":    token,
-	}).Info("initRegistry")
-	tags, err := registry.ReposTags(token, args[0])
+func CmdInfo() error {
+	ctx.Infof("\033[1m%s\033[0m", "Initialize Registry")
+	registry := initRegistry(ImageName)
+
+	tags, err := registry.ReposTags(ImageName)
 	if err != nil {
-		log.Fatal(err.Error())
+		return err
 	}
 	w := new(tabwriter.Writer)
 	w.Init(os.Stdout, 0, 0, 4, ' ', 0)
-	fmt.Println("- Repository:", args[0])
+	fmt.Println("- Repository:", tags.Name)
 	fmt.Println("- Tags:")
-	for k, v := range tags {
-		fmt.Fprintf(w, "\t%s\t%s\n", k, v)
+	for _, v := range tags.Tags {
+		fmt.Fprintf(w, "\t%s\n", v)
 	}
 	w.Flush()
+	return nil
 }
 
-// CmdLayerInfo gets docker image layer info
-func CmdLayerInfo(args []string) {
-	registry, token := initRegistry(args[0])
-	info, err := registry.LayerJson(token, args[1])
-	if err != nil {
-		ctx.Fatal(err.Error())
-	}
-	ancestry, err := registry.LayerAncestry(token, args[1])
-	if err != nil {
-		ctx.Fatal(err.Error())
-	}
-	w := new(tabwriter.Writer)
-	w.Init(os.Stdout, 0, 0, 4, ' ', 0)
-	fmt.Fprintf(w, "- Id\t%s\n", info.Id)
-	fmt.Fprintf(w, "- Parent\t%s\n", info.Parent)
-	fmt.Fprintf(w, "- Size\t%s\n", humanize.Bytes(uint64(info.Size)))
-	fmt.Fprintf(w, "- Created\t%s\n", info.Created)
-	fmt.Fprintf(w, "- DockerVersion\t%s\n", info.DockerVersion)
-	fmt.Fprintf(w, "- Author\t%s\n", info.Author)
-	fmt.Fprintf(w, "- Ancestry:")
-	for _, id := range *ancestry {
-		fmt.Fprintf(w, "\t%s\n", id)
-	}
-	w.Flush()
-}
-
-// CmdCurlme outputs curl command to pull image layer
-func CmdCurlme(args []string) {
-	registry, token := initRegistry(args[0])
-	fmt.Printf("curl -i --location-trusted -I -X GET -H \"Authorization: Token %s\" %s/v1/images/%s/layer\n",
-		token, registry.RegistryHost, args[1])
-}
-
-// DownloadImage downloads docker image
-func DownloadImage(args []string) {
+func createManifest(tempDir, confFile string, layerFiles []string) (string, error) {
 	// Create the file
-	out, err := os.Create(fmt.Sprintf("%s.tar", strings.Replace(args[0], "/", "_", 1)))
+	tmpfn := filepath.Join(tempDir, "manifest.json")
+	out, err := os.Create(tmpfn)
 	if err != nil {
-		log.WithError(err).Error("create file failed")
+		log.WithError(err).Error("create manifest JSON failed")
 	}
 	defer out.Close()
 
-	registry, token := initRegistry(args[0])
-	url := fmt.Sprintf("%s/v1/images/%s/layer", registry.RegistryHost, args[1])
-
-	req, err := http.NewRequest("GET", url, nil)
-	req.Header.Add("Authorization", fmt.Sprintf("Token %s", token))
-
-	client := &http.Client{
-	// CheckRedirect: redirectPolicyFunc,
+	m := Manifest{
+		Config:   confFile,
+		Layers:   layerFiles,
+		RepoTags: []string{ImageName + ":" + ImageTag},
 	}
-	resp, err := client.Do(req)
+
+	mJSON, err := json.Marshal(m)
 	if err != nil {
-		log.Fatal(err.Error())
+		log.WithError(err).Error("marshalling manifest JSON failed")
 	}
-	defer resp.Body.Close()
-
-	log.WithFields(log.Fields{
-		"status":   resp.Status,
-		"size":     resp.ContentLength,
-		"filepath": fmt.Sprintf("%s.tar", args[0]),
-	}).Debug("downloading file")
-
-	// Writer the body to file
-	_, err = io.Copy(out, resp.Body)
+	// Write the body to JSON file
+	_, err = out.Write(mJSON)
 	if err != nil {
-		log.WithError(err).Error("writing file failed")
+		log.WithError(err).Error("writing manifest JSON failed")
 	}
+
+	return tmpfn, nil
+}
+
+// DownloadImage downloads docker image
+func DownloadImage() {
+	// Get image manifest
+	ctx.Infof("\033[1m%s\033[0m", "Initialize Registry")
+	registry := initRegistry(ImageName)
+
+	mF, err := registry.ReposManifests(ImageName, ImageTag)
+	if err != nil {
+		ctx.Fatal(err.Error())
+	}
+	dir, err := ioutil.TempDir("", fmt.Sprintf("graboid_%s", strings.Replace(ImageName, "/", "_", 1)))
+	if err != nil {
+		ctx.Fatal(err.Error())
+	}
+	defer os.RemoveAll(dir) // clean up
+
+	log.Infof("\033[1m%s\033[0m", "GET CONFIG")
+	cfile, err := registry.RepoGetConfig(dir, ImageName, mF)
+	if err != nil {
+		ctx.Fatal(err.Error())
+	}
+
+	log.Infof("\033[1m%s\033[0m", "GET LAYERS")
+	lfiles, err := registry.RepoGetLayers(dir, ImageName, mF)
+	if err != nil {
+		ctx.Fatal(err.Error())
+	}
+
+	log.Infof("\033[1m%s\033[0m", "CREATE manifest.json")
+	_, err = createManifest(dir, cfile, lfiles)
+	if err != nil {
+		ctx.Fatal(err.Error())
+	}
+
+	tarFile := fmt.Sprintf("%s.tar", strings.Replace(ImageName, "/", "_", 1))
+	log.Infof("\033[1m%s: %s\033[0m", "CREATE docker image tarball", tarFile)
+	err = tarFiles(dir, tarFile)
+	if err != nil {
+		ctx.Fatal(err.Error())
+	}
+	log.Infof("\033[1mSUCCESS!\033[0m")
 }
 
 var appHelpTemplate = `Usage: {{.Name}} {{if .Flags}}[OPTIONS] {{end}}COMMAND [arg...]
@@ -220,6 +219,36 @@ func main() {
 			Destination: &passwd,
 		},
 	}
+	app.Commands = []cli.Command{
+		{
+			Name:  "tags",
+			Usage: "List image tags",
+			Action: func(c *cli.Context) error {
+				if c.Bool("verbose") {
+					log.SetLevel(log.DebugLevel)
+				}
+
+				if c.Args().Present() {
+					if strings.Contains(c.Args().First(), ":") {
+						imageParts := strings.Split(c.Args().First(), ":")
+						ImageName = imageParts[0]
+						ImageTag = imageParts[1]
+					} else {
+						ImageName = c.Args().First()
+						ImageTag = "latest"
+					}
+
+					ctx = log.WithFields(log.Fields{
+						"domain": IndexDomain,
+						"image":  ImageName,
+						"tag":    ImageTag,
+					})
+					return CmdInfo()
+				}
+				return errors.New("please supply a image:tag to pull")
+			},
+		},
+	}
 	app.Action = func(c *cli.Context) error {
 
 		if c.Bool("verbose") {
@@ -227,12 +256,24 @@ func main() {
 		}
 
 		if c.Args().Present() {
-			CmdInfo(c.Args())
-			CmdLayerInfo(c.Args())
-			CmdCurlme(c.Args())
-			DownloadImage(c.Args())
+			if strings.Contains(c.Args().First(), ":") {
+				imageParts := strings.Split(c.Args().First(), ":")
+				ImageName = imageParts[0]
+				ImageTag = imageParts[1]
+			} else {
+				ImageName = c.Args().First()
+				ImageTag = "latest"
+			}
+
+			ctx = log.WithFields(log.Fields{
+				"domain": IndexDomain,
+				"image":  ImageName,
+				"tag":    ImageTag,
+			})
+			// downlad docker image as a tarball
+			DownloadImage()
 		} else {
-			return errors.New("please supply a image to pull")
+			return errors.New("please supply a image:tag to pull")
 		}
 		return nil
 	}
