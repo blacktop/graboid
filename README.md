@@ -1,7 +1,7 @@
 ![logo](https://github.com/blacktop/graboid/raw/master/graboids.jpg)
 
-graboid
-=======
+graboid [WIP] :construction:
+============================
 
 [![Circle CI](https://circleci.com/gh/blacktop/graboid.png?style=shield)](https://circleci.com/gh/blacktop/graboid) [![GoDoc](https://godoc.org/github.com/blacktop/graboid?status.svg)](https://godoc.org/github.com/blacktop/graboid) [![GitHub release](https://img.shields.io/github/release/blacktop/graboid.svg)](https://github.com/https://github.com/blacktop/graboid/releases/releases) [![License](http://img.shields.io/:license-mit-blue.svg)](http://doge.mit-license.org)
 
@@ -39,7 +39,7 @@ Run 'graboid COMMAND --help' for more information on a command.
 
 ### Install
 
--	On [macOS](https://github.com/blacktop/graboid/blob/master/docs/macos.md)
+-	On [mac](https://github.com/blacktop/graboid/blob/master/docs/macos.md)
 -	On [linux](https://github.com/blacktop/graboid/blob/master/docs/linux.md)
 -	On [windows](https://github.com/blacktop/graboid/blob/master/docs/windows.md)
 
@@ -67,6 +67,10 @@ $ graboid blacktop/scifgif:latest
 ```sh
 $ docker load -i blacktop_scifgif.tar
 ```
+
+### TODO
+
+-	[ ] fix temp paths (don't use full paths)
 
 ### Issues
 
