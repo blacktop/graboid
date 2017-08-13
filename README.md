@@ -52,7 +52,7 @@ $ graboid blacktop/scifgif:latest
 ### Import into docker
 
 ```sh
-$ docker load -i blacktop/_cifgif.tar
+$ docker load -i blacktop_scifgif.tar
 ```
 
 ### Issues

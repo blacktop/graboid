@@ -8,12 +8,6 @@
   revision = "0296d6eb16bb28f8a0c55668affcf4876dc269be"
 
 [[projects]]
-  branch = "master"
-  name = "github.com/dustin/go-humanize"
-  packages = ["."]
-  revision = "259d2a102b871d17f30e3cd9881a642961a1e486"
-
-[[projects]]
   name = "github.com/pkg/errors"
   packages = ["."]
   revision = "645ef00459ed84a119197bfb8d8205042c6df63d"
@@ -22,12 +16,12 @@
 [[projects]]
   name = "github.com/urfave/cli"
   packages = ["."]
-  revision = "0bdeddeeb0f650497d603c4ad7b20cfe685682f6"
-  version = "v1.19.1"
+  revision = "cfb38830724cc34fedffe9a2a29fb54fa9169cd1"
+  version = "v1.20.0"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "b827e43c6f468f997ae7eb44fa3cf10d471a301affb404097c32320f84009fc5"
+  inputs-digest = "810047aea4240116e102caf5b9713c67294c787ab00dd14fc8f700be58f34e21"
   solver-name = "gps-cdcl"
   solver-version = 1
