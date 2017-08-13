@@ -144,7 +144,7 @@ func DownloadImage() {
 	}
 
 	tarFile := fmt.Sprintf("%s.tar", strings.Replace(ImageName, "/", "_", 1))
-	log.Infof("\033[1m%s: %s\033[0m", "CREATE docker image tarball", tarFile)
+	log.Infof("\033[1m%s:\033[0m \033[34m%s\033[0m", "CREATE docker image tarball", tarFile)
 	err = tarFiles(dir, tarFile)
 	if err != nil {
 		ctx.Fatal(err.Error())

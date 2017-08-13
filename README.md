@@ -3,7 +3,7 @@
 graboid
 =======
 
-[![Circle CI](https://circleci.com/gh/blacktop/graboid.png?style=shield)](https://circleci.com/gh/blacktop/graboid) [![GoDoc](https://godoc.org/github.com/blacktop/graboid?status.svg)](https://godoc.org/github.com/blacktop/graboid) [![License](http://img.shields.io/:license-mit-blue.svg)](http://doge.mit-license.org)
+[![Circle CI](https://circleci.com/gh/blacktop/graboid.png?style=shield)](https://circleci.com/gh/blacktop/graboid) [![License](http://img.shields.io/:license-mit-blue.svg)](http://doge.mit-license.org) [![GoDoc](https://godoc.org/github.com/blacktop/graboid?status.svg)](https://godoc.org/github.com/blacktop/graboid) [![GitHub release](https://img.shields.io/github/release/blacktop/graboid.svg)](https://github.com/https://github.com/blacktop/graboid/releases/releases)
 
 > Client-less Docker Image Downloader
 
@@ -17,7 +17,7 @@ Usage: graboid [OPTIONS] COMMAND [arg...]
 
 Docker Image Downloader
 
-Version: 0.4.0, BuildTime: 20170812
+Version: 0.5.0, BuildTime: 20170812
 Author: blacktop - <https://github.com/blacktop>
 
 Options:
@@ -42,6 +42,19 @@ Run 'graboid COMMAND --help' for more information on a command.
 -	On [macOS](https://github.com/blacktop/graboid/blob/master/docs/macos.md)
 -	On [linux](https://github.com/blacktop/graboid/blob/master/docs/linux.md)
 -	On [windows](https://github.com/blacktop/graboid/blob/master/docs/windows.md)
+
+### List available image tags
+
+```sh
+$ graboid tags blacktop/scifgif
+```
+
+```sh
+- Repository: blacktop/scifgif
+- Tags:
+    0.2.0
+    latest
+```
 
 ### Download the docker image `blacktop/scifgif`
 
