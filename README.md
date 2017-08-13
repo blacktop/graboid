@@ -12,12 +12,6 @@ graboid
 Getting Started
 ---------------
 
-### Install on macOS
-
-```sh
-$ brew install blacktop/tap/graboid
-```
-
 ```sh
 Usage: graboid [OPTIONS] COMMAND [arg...]
 
@@ -43,13 +37,19 @@ Commands:
 Run 'graboid COMMAND --help' for more information on a command.
 ```
 
-### Download docker image `blacktop/scifgif`
+### Install
+
+-	On [macOS](https://github.com/blacktop/graboid/blob/master/docs/macos.md)
+-	On [linux](https://github.com/blacktop/graboid/blob/master/docs/linux.md)
+-	On [windows](https://github.com/blacktop/graboid/blob/master/docs/windows.md)
+
+### Download the docker image `blacktop/scifgif`
 
 ```sh
 $ graboid blacktop/scifgif:latest
 ```
 
-### Import into docker
+### Import image into docker
 
 ```sh
 $ docker load -i blacktop_scifgif.tar
