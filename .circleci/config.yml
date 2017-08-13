@@ -23,3 +23,11 @@ jobs:
 
       # specify any bash command here prefixed with `run: `
       - run: go run *.go blacktop/bro:latest
+      - run:
+          name: Load image into docker
+          command: |
+            docker load -i blacktop_bro.tar
+      - run:
+          name: Test docker image
+          command: |
+            docker run blacktop/bro           
