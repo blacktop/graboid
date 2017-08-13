@@ -30,4 +30,4 @@ jobs:
       - run:
           name: Test docker image
           command: |
-            docker run blacktop/bro
+            docker run blacktop/bro -v
