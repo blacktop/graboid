@@ -6,6 +6,8 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+
+	"github.com/apex/log"
 )
 
 func tarFiles(srcDir, tarName string) error {
@@ -25,11 +27,11 @@ func tarFiles(srcDir, tarName string) error {
 			if err != nil {
 				return err
 			}
+
 			header, err := tar.FileInfoHeader(info, info.Name())
 			if err != nil {
 				return err
 			}
-
 			if err = tarball.WriteHeader(header); err != nil {
 				return err
 			}
@@ -38,6 +40,7 @@ func tarFiles(srcDir, tarName string) error {
 				return nil
 			}
 
+			log.WithField("path", path).Debug("taring file")
 			file, err := os.Open(path)
 			if err != nil {
 				return err

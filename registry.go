@@ -246,7 +246,7 @@ func (reg *Registry) RepoGetLayers(tempDir, reposName string, manifest *Manifest
 		}
 		defer out.Close()
 
-		// Download config
+		// Download layer
 		headers := make(map[string]string)
 		url := fmt.Sprintf("%s/v2/%s/blobs/%s", reg.Host, reposName, layer.Digest)
 		headers["Accept"] = layer.MediaType
