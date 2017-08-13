@@ -24,7 +24,7 @@ Usage: graboid [OPTIONS] COMMAND [arg...]
 
 Docker Image Downloader
 
-Version: 0.6.0, BuildTime: 20170812
+Version: 0.7.0, BuildTime: 20170812
 Author: blacktop - <https://github.com/blacktop>
 
 Options:
@@ -68,6 +68,10 @@ Import image into docker
 ```sh
 $ docker load -i blacktop_scifgif.tar
 ```
+
+### TODO
+
+- [ ] parallelize the layer downloads to decrease the total time to download large images
 
 ### Issues
 

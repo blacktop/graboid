@@ -12,6 +12,8 @@ import (
 	"strings"
 	"time"
 
+	pb "gopkg.in/cheggaaa/pb.v1"
+
 	"github.com/apex/log"
 )
 
@@ -256,12 +258,17 @@ func (reg *Registry) RepoGetLayers(tempDir, reposName string, manifest *Manifest
 			return nil, err
 		}
 		defer res.Body.Close()
-
+		// create progressbar
+		bar := pb.New(layer.Size).SetUnits(pb.U_BYTES)
+		bar.SetWidth(90)
+		bar.Start()
+		reader := bar.NewProxyReader(res.Body)
 		// Write the body to file
-		_, err = io.Copy(out, res.Body)
+		_, err = io.Copy(out, reader)
 		if err != nil {
 			log.WithError(err).Error("writing tar file failed")
 		}
+		bar.Finish()
 	}
 
 	return layerFiles, nil
