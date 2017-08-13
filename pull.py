@@ -3,7 +3,11 @@ import json
 
 namespace = "blacktop"
 repo_name = "bro"
-manifest_json = [{"Config": "", "RepoTags": [f"{namespace}/{repo_name}:latest"], "Layers": []}]
+manifest_json = [{
+    "Config": "", 
+    "RepoTags": [f"{namespace}/{repo_name}:latest"],
+    "Layers": []
+}]
 
 
 def remove_prefix(text, prefix):

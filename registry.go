@@ -229,7 +229,7 @@ func (reg *Registry) RepoGetConfig(tempDir, reposName string, manifest *Manifest
 		log.WithError(err).Error("writing config file failed")
 	}
 
-	return tmpfn, nil
+	return filepath.Base(tmpfn), nil
 }
 
 // RepoGetLayers gets docker image layer tarballs
@@ -239,7 +239,7 @@ func (reg *Registry) RepoGetLayers(tempDir, reposName string, manifest *Manifest
 	for _, layer := range manifest.Layers {
 		// Create the TAR file
 		tmpfn := filepath.Join(tempDir, fmt.Sprintf("%s.tar", strings.TrimPrefix(layer.Digest, "sha256:")))
-		layerFiles = append(layerFiles, tmpfn)
+		layerFiles = append(layerFiles, filepath.Base(tmpfn))
 		out, err := os.Create(tmpfn)
 		if err != nil {
 			log.WithError(err).Error("create tar file failed")
@@ -266,40 +266,3 @@ func (reg *Registry) RepoGetLayers(tempDir, reposName string, manifest *Manifest
 
 	return layerFiles, nil
 }
-
-// func (reg *Registry) LayerJson(layerId string) (*LayerJson, error) {
-// 	url := fmt.Sprintf("%s/v1/images/%s/json", reg.RegistryHost, layerId)
-// 	res, e := reg.doGet(url)
-// 	if e != nil {
-// 		return nil, e
-// 	}
-// 	defer res.Body.Close()
-// 	rawJSON, err := ioutil.ReadAll(res.Body)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	result := &LayerJson{}
-// 	if err := json.Unmarshal(rawJSON, &result); err != nil {
-// 		return nil, err
-// 	}
-// 	result.Size, _ = strconv.Atoi(res.Header.Get("X-Docker-Size"))
-// 	return result, nil
-// }
-
-// func (reg *Registry) LayerAncestry(layerId string) (*[]string, error) {
-// 	url := fmt.Sprintf("%s/v1/images/%s/ancestry", reg.RegistryHost, layerId)
-// 	res, e := reg.doGet(url)
-// 	if e != nil {
-// 		return nil, e
-// 	}
-// 	defer res.Body.Close()
-// 	rawJSON, err := ioutil.ReadAll(res.Body)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	result := new([]string)
-// 	if err := json.Unmarshal(rawJSON, &result); err != nil {
-// 		return nil, err
-// 	}
-// 	return result, nil
-// }

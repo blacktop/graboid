@@ -61,8 +61,8 @@ func initRegistry(reposName string) *Registry {
 	return registry
 }
 
-// CmdInfo get docker image metadata info
-func CmdInfo() error {
+// CmdTags get docker image tags
+func CmdTags() error {
 	ctx.Infof("\033[1m%s\033[0m", "Initialize Registry")
 	registry := initRegistry(ImageName)
 
@@ -82,6 +82,7 @@ func CmdInfo() error {
 }
 
 func createManifest(tempDir, confFile string, layerFiles []string) (string, error) {
+	var manifestArray []Manifest
 	// Create the file
 	tmpfn := filepath.Join(tempDir, "manifest.json")
 	out, err := os.Create(tmpfn)
@@ -95,8 +96,8 @@ func createManifest(tempDir, confFile string, layerFiles []string) (string, erro
 		Layers:   layerFiles,
 		RepoTags: []string{ImageName + ":" + ImageTag},
 	}
-
-	mJSON, err := json.Marshal(m)
+	manifestArray = append(manifestArray, m)
+	mJSON, err := json.Marshal(manifestArray)
 	if err != nil {
 		log.WithError(err).Error("marshalling manifest JSON failed")
 	}
@@ -119,7 +120,8 @@ func DownloadImage() {
 	if err != nil {
 		ctx.Fatal(err.Error())
 	}
-	dir, err := ioutil.TempDir("", fmt.Sprintf("graboid_%s", strings.Replace(ImageName, "/", "_", 1)))
+
+	dir, err := ioutil.TempDir("", "graboid")
 	if err != nil {
 		ctx.Fatal(err.Error())
 	}
@@ -243,7 +245,7 @@ func main() {
 						"image":  ImageName,
 						"tag":    ImageTag,
 					})
-					return CmdInfo()
+					return CmdTags()
 				}
 				return errors.New("please supply a image:tag to pull")
 			},

@@ -2,10 +2,10 @@ package main
 
 import (
 	"archive/tar"
+	"compress/gzip"
 	"io"
 	"os"
 	"path/filepath"
-	"strings"
 )
 
 func tarFiles(srcDir, tarName string) error {
@@ -15,18 +15,10 @@ func tarFiles(srcDir, tarName string) error {
 	}
 	defer tarfile.Close()
 
-	tarball := tar.NewWriter(tarfile)
+	gw := gzip.NewWriter(tarfile)
+	defer gw.Close()
+	tarball := tar.NewWriter(gw)
 	defer tarball.Close()
-
-	info, err := os.Stat(srcDir)
-	if err != nil {
-		return nil
-	}
-
-	var baseDir string
-	if info.IsDir() {
-		baseDir = filepath.Base(srcDir)
-	}
 
 	return filepath.Walk(srcDir,
 		func(path string, info os.FileInfo, err error) error {
@@ -36,10 +28,6 @@ func tarFiles(srcDir, tarName string) error {
 			header, err := tar.FileInfoHeader(info, info.Name())
 			if err != nil {
 				return err
-			}
-
-			if baseDir != "" {
-				header.Name = filepath.Join(baseDir, strings.TrimPrefix(path, srcDir))
 			}
 
 			if err = tarball.WriteHeader(header); err != nil {

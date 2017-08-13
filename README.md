@@ -9,6 +9,13 @@ graboid [WIP] :construction:
 
 ---
 
+Install
+-------
+
+-	On [Mac](https://github.com/blacktop/graboid/blob/master/docs/macos.md)
+-	On [Linux](https://github.com/blacktop/graboid/blob/master/docs/linux.md)
+-	On [Windows](https://github.com/blacktop/graboid/blob/master/docs/windows.md)
+
 Getting Started
 ---------------
 
@@ -37,12 +44,6 @@ Commands:
 Run 'graboid COMMAND --help' for more information on a command.
 ```
 
-### Install
-
--	On [mac](https://github.com/blacktop/graboid/blob/master/docs/macos.md)
--	On [linux](https://github.com/blacktop/graboid/blob/master/docs/linux.md)
--	On [windows](https://github.com/blacktop/graboid/blob/master/docs/windows.md)
-
 ### List available image tags
 
 ```sh
@@ -62,15 +63,11 @@ $ graboid tags blacktop/scifgif
 $ graboid blacktop/scifgif:latest
 ```
 
-### Import image into docker
+Import image into docker
 
 ```sh
 $ docker load -i blacktop_scifgif.tar
 ```
-
-### TODO
-
--	[ ] fix temp paths (don't use full paths)
 
 ### Issues
 
