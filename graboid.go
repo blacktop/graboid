@@ -155,10 +155,11 @@ func DownloadImage() {
 }
 
 var appHelpTemplate = `Usage: {{.Name}} {{if .Flags}}[OPTIONS] {{end}}COMMAND [arg...]
+
 {{.Usage}}
+
 Version: {{.Version}}{{if or .Author .Email}}
-Author:{{if .Author}}
-  {{.Author}}{{if .Email}} - <{{.Email}}>{{end}}{{else}}
+Author:{{if .Author}} {{.Author}}{{if .Email}} - <{{.Email}}>{{end}}{{else}}
   {{.Email}}{{end}}{{end}}
 {{if .Flags}}
 Options:
@@ -193,28 +194,28 @@ func main() {
 			EnvVar: "TIMEOUT",
 		},
 		cli.StringFlag{
-			Name:        "index,i",
+			Name:        "index",
 			Value:       "https://index.docker.io",
 			Usage:       "override index endpoint",
 			EnvVar:      "GRABOID_INDEX",
 			Destination: &IndexDomain,
 		},
 		cli.StringFlag{
-			Name:        "registry,r",
+			Name:        "registry",
 			Value:       "",
 			Usage:       "override registry endpoint",
 			EnvVar:      "GRABOID_REGISTRY",
 			Destination: &RegistryDomain,
 		},
 		cli.StringFlag{
-			Name:        "user,u",
+			Name:        "user",
 			Value:       "",
 			Usage:       "registry username",
 			EnvVar:      "GRABOID_USERNAME",
 			Destination: &user,
 		},
 		cli.StringFlag{
-			Name:        "password, p",
+			Name:        "password",
 			Value:       "",
 			Usage:       "registry password",
 			EnvVar:      "GRABOID_PASSWORD",

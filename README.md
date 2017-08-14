@@ -24,18 +24,18 @@ Usage: graboid [OPTIONS] COMMAND [arg...]
 
 Docker Image Downloader
 
-Version: 0.7.0, BuildTime: 20170812
+Version: 0.8.0, BuildTime: 20170813
 Author: blacktop - <https://github.com/blacktop>
 
 Options:
-  --verbose, -V               verbose output
-  --timeout value             elasticsearch timeout (in seconds) (default: 60) [$TIMEOUT]
-  --index value, -i value     override index endpoint (default: "https://index.docker.io") [$GRABOID_INDEX]
-  --registry value, -r value  override registry endpoint [$GRABOID_REGISTRY]
-  --user value, -u value      registry username [$GRABOID_USERNAME]
-  --password value, -p value  registry password [$GRABOID_PASSWORD]
-  --help, -h                  show help
-  --version, -v               print the version
+  --verbose, -V     verbose output
+  --timeout value   elasticsearch timeout (in seconds) (default: 60) [$TIMEOUT]
+  --index value     override index endpoint (default: "https://index.docker.io") [$GRABOID_INDEX]
+  --registry value  override registry endpoint [$GRABOID_REGISTRY]
+  --user value      registry username [$GRABOID_USERNAME]
+  --password value  registry password [$GRABOID_PASSWORD]
+  --help, -h        show help
+  --version, -v     print the version
 
 Commands:
   tags  List image tags
