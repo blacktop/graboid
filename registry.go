@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -60,7 +61,7 @@ type manifestLayer struct {
 }
 
 // NewRegistry creates a new Registry object
-func NewRegistry(endpoint string, registryDomain string) (*Registry, error) {
+func NewRegistry(endpoint, registryDomain string, insecure bool) (*Registry, error) {
 	u, e := url.Parse(endpoint)
 	if e != nil {
 		return nil, e
@@ -81,7 +82,12 @@ func NewRegistry(endpoint string, registryDomain string) (*Registry, error) {
 		}
 		registryHost = fmt.Sprintf("%s://%s", u.Scheme, u.Host)
 	}
-	client := &http.Client{}
+	client := &http.Client{
+		Transport: &http.Transport{
+			Proxy:           http.ProxyFromEnvironment,
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: insecure},
+		},
+	}
 	return &Registry{
 		URL:          origURL,
 		Host:         host,

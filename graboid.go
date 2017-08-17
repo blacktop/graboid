@@ -48,8 +48,8 @@ func init() {
 	log.SetHandler(clihander.Default)
 }
 
-func initRegistry(reposName string) *Registry {
-	registry, err := NewRegistry(IndexDomain, RegistryDomain)
+func initRegistry(reposName string, insecure bool) *Registry {
+	registry, err := NewRegistry(IndexDomain, RegistryDomain, insecure)
 	if err != nil {
 		ctx.Fatal(err.Error())
 	}
@@ -62,9 +62,9 @@ func initRegistry(reposName string) *Registry {
 }
 
 // CmdTags get docker image tags
-func CmdTags() error {
+func CmdTags(insecure bool) error {
 	ctx.Infof("\033[1m%s\033[0m", "Initialize Registry")
-	registry := initRegistry(ImageName)
+	registry := initRegistry(ImageName, insecure)
 
 	tags, err := registry.ReposTags(ImageName)
 	if err != nil {
@@ -111,10 +111,10 @@ func createManifest(tempDir, confFile string, layerFiles []string) (string, erro
 }
 
 // DownloadImage downloads docker image
-func DownloadImage() {
+func DownloadImage(insecure bool) {
 	// Get image manifest
 	ctx.Infof("\033[1m%s\033[0m", "Initialize Registry")
-	registry := initRegistry(ImageName)
+	registry := initRegistry(ImageName, insecure)
 
 	mF, err := registry.ReposManifests(ImageName, ImageTag)
 	if err != nil {
@@ -207,6 +207,10 @@ func main() {
 			EnvVar:      "GRABOID_REGISTRY",
 			Destination: &RegistryDomain,
 		},
+		cli.BoolFlag{
+			Name:  "insecure",
+			Usage: "do not verify ssl certs",
+		},
 		cli.StringFlag{
 			Name:        "user",
 			Value:       "",
@@ -246,7 +250,7 @@ func main() {
 						"image":  ImageName,
 						"tag":    ImageTag,
 					})
-					return CmdTags()
+					return CmdTags(c.Bool("insecure"))
 				}
 				return errors.New("please supply a image:tag to pull")
 			},
@@ -274,15 +278,15 @@ func main() {
 				"tag":    ImageTag,
 			})
 			// downlad docker image as a tarball
-			DownloadImage()
+			DownloadImage(c.Bool("insecure"))
 		} else {
-			return errors.New("please supply a image:tag to pull")
+			cli.ShowAppHelp(c)
 		}
 		return nil
 	}
 
 	err := app.Run(os.Args)
 	if err != nil {
-		ctx.Fatal(err.Error())
+		log.Fatal(err.Error())
 	}
 }
