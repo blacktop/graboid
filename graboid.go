@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"text/tabwriter"
 	"time"
@@ -48,6 +49,12 @@ func init() {
 	log.SetHandler(clihander.Default)
 }
 
+func getFmtStr() string {
+	if runtime.GOOS == "windows" {
+		return "%s"
+	}
+	return "\033[1m%s\033[0m"
+}
 func initRegistry(reposName string, insecure bool) *Registry {
 	registry, err := NewRegistry(IndexDomain, RegistryDomain, insecure)
 	if err != nil {
@@ -63,7 +70,7 @@ func initRegistry(reposName string, insecure bool) *Registry {
 
 // CmdTags get docker image tags
 func CmdTags(insecure bool) error {
-	ctx.Infof("\033[1m%s\033[0m", "Initialize Registry")
+	ctx.Infof(getFmtStr(), "Initialize Registry")
 	registry := initRegistry(ImageName, insecure)
 
 	tags, err := registry.ReposTags(ImageName)
@@ -113,7 +120,7 @@ func createManifest(tempDir, confFile string, layerFiles []string) (string, erro
 // DownloadImage downloads docker image
 func DownloadImage(insecure bool) {
 	// Get image manifest
-	ctx.Infof("\033[1m%s\033[0m", "Initialize Registry")
+	ctx.Infof(getFmtStr(), "Initialize Registry")
 	registry := initRegistry(ImageName, insecure)
 
 	mF, err := registry.ReposManifests(ImageName, ImageTag)
@@ -127,26 +134,30 @@ func DownloadImage(insecure bool) {
 	}
 	defer os.RemoveAll(dir) // clean up
 
-	log.Infof("\033[1m%s\033[0m", "GET CONFIG")
+	log.Infof(getFmtStr(), "GET CONFIG")
 	cfile, err := registry.RepoGetConfig(dir, ImageName, mF)
 	if err != nil {
 		ctx.Fatal(err.Error())
 	}
 
-	log.Infof("\033[1m%s\033[0m", "GET LAYERS")
+	log.Infof(getFmtStr(), "GET LAYERS")
 	lfiles, err := registry.RepoGetLayers(dir, ImageName, mF)
 	if err != nil {
 		ctx.Fatal(err.Error())
 	}
 
-	log.Infof("\033[1m%s\033[0m", "CREATE manifest.json")
+	log.Infof(getFmtStr(), "CREATE manifest.json")
 	_, err = createManifest(dir, cfile, lfiles)
 	if err != nil {
 		ctx.Fatal(err.Error())
 	}
 
 	tarFile := fmt.Sprintf("%s.tar", strings.Replace(ImageName, "/", "_", 1))
-	log.Infof("\033[1m%s:\033[0m \033[34m%s\033[0m", "CREATE docker image tarball", tarFile)
+	if runtime.GOOS == "windows" {
+		log.Infof("%s: %s", "CREATE docker image tarball", tarFile)
+	} else {
+		log.Infof("\033[1m%s:\033[0m \033[34m%s\033[0m", "CREATE docker image tarball", tarFile)
+	}
 	err = tarFiles(dir, tarFile)
 	if err != nil {
 		ctx.Fatal(err.Error())
