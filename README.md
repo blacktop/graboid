@@ -24,14 +24,14 @@ Usage: graboid [OPTIONS] COMMAND [arg...]
 
 Docker Image Downloader
 
-Version: 0.8.0, BuildTime: 20170813
+Version: 0.9.0, BuildTime: 20170816
 Author: blacktop - <https://github.com/blacktop>
 
 Options:
   --verbose, -V     verbose output
-  --timeout value   elasticsearch timeout (in seconds) (default: 60) [$TIMEOUT]
   --index value     override index endpoint (default: "https://index.docker.io") [$GRABOID_INDEX]
   --registry value  override registry endpoint [$GRABOID_REGISTRY]
+  --insecure        do not verify ssl certs  
   --user value      registry username [$GRABOID_USERNAME]
   --password value  registry password [$GRABOID_PASSWORD]
   --help, -h        show help
@@ -71,8 +71,8 @@ $ docker load -i blacktop_scifgif.tar
 
 ### TODO
 
-- [ ] parallelize the layer downloads to decrease the total time to download large images
-- [ ] add image signature verification ([Notary](https://github.com/docker/notary)?)
+-	[ ] parallelize the layer downloads to decrease the total time to download large images
+-	[ ] add image signature verification ([Notary](https://github.com/docker/notary)?)
 
 ### Issues
 

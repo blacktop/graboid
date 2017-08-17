@@ -187,12 +187,6 @@ func main() {
 			Name:  "verbose, V",
 			Usage: "verbose output",
 		},
-		cli.IntFlag{
-			Name:   "timeout",
-			Value:  60,
-			Usage:  "elasticsearch timeout (in seconds)",
-			EnvVar: "TIMEOUT",
-		},
 		cli.StringFlag{
 			Name:        "index",
 			Value:       "https://index.docker.io",
