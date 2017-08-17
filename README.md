@@ -73,6 +73,7 @@ $ docker load -i blacktop_scifgif.tar
 
 -	[ ] parallelize the layer downloads to decrease the total time to download large images
 -	[ ] add image signature verification ([Notary](https://github.com/docker/notary)?)
+-	[ ] ensure support for long connections for large downloads
 
 ### Issues
 
