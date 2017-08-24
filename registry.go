@@ -25,6 +25,7 @@ type Registry struct {
 	RegistryHost string
 	client       *http.Client
 	Token        string
+	Proxy        string
 }
 
 type auth struct {
@@ -60,8 +61,19 @@ type manifestLayer struct {
 	Size      int    `json:"size,omitempty"`
 }
 
+func getProxy(proxy string) func(*http.Request) (*url.URL, error) {
+	if len(proxy) > 0 {
+		proxyURL, err := url.Parse(proxy)
+		if err != nil {
+			log.WithError(err).Error("bad proxy url")
+		}
+		return http.ProxyURL(proxyURL)
+	}
+	return http.ProxyFromEnvironment
+}
+
 // NewRegistry creates a new Registry object
-func NewRegistry(endpoint, registryDomain string, insecure bool) (*Registry, error) {
+func NewRegistry(endpoint, registryDomain, proxy string, insecure bool) (*Registry, error) {
 	u, e := url.Parse(endpoint)
 	if e != nil {
 		return nil, e
@@ -84,7 +96,7 @@ func NewRegistry(endpoint, registryDomain string, insecure bool) (*Registry, err
 	}
 	client := &http.Client{
 		Transport: &http.Transport{
-			Proxy:           http.ProxyFromEnvironment,
+			Proxy:           getProxy(proxy),
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: insecure},
 		},
 	}

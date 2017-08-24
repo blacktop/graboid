@@ -31,6 +31,8 @@ var (
 	ImageName string
 	// ImageTag is the docker image tag to pull
 	ImageTag string
+	// Proxy is the http/https proxy
+	Proxy string
 	// creds
 	user   string
 	passwd string
@@ -56,7 +58,7 @@ func getFmtStr() string {
 	return "\033[1m%s\033[0m"
 }
 func initRegistry(reposName string, insecure bool) *Registry {
-	registry, err := NewRegistry(IndexDomain, RegistryDomain, insecure)
+	registry, err := NewRegistry(IndexDomain, RegistryDomain, Proxy, insecure)
 	if err != nil {
 		ctx.Fatal(err.Error())
 	}
@@ -211,6 +213,13 @@ func main() {
 			Usage:       "override registry endpoint",
 			EnvVar:      "GRABOID_REGISTRY",
 			Destination: &RegistryDomain,
+		},
+		cli.StringFlag{
+			Name:        "proxy",
+			Value:       "",
+			Usage:       "HTTP/HTTPS proxy",
+			EnvVar:      "GRABOID_PROXY",
+			Destination: &Proxy,
 		},
 		cli.BoolFlag{
 			Name:  "insecure",
