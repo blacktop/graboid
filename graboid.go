@@ -57,6 +57,7 @@ func getFmtStr() string {
 	}
 	return "\033[1m%s\033[0m"
 }
+
 func initRegistry(reposName string, insecure bool) *Registry {
 	registry, err := NewRegistry(IndexDomain, RegistryDomain, Proxy, insecure)
 	if err != nil {

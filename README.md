@@ -31,7 +31,8 @@ Options:
   --verbose, -V     verbose output
   --index value     override index endpoint (default: "https://index.docker.io") [$GRABOID_INDEX]
   --registry value  override registry endpoint [$GRABOID_REGISTRY]
-  --insecure        do not verify ssl certs  
+  --proxy value     HTTP/HTTPS proxy [$GRABOID_PROXY]
+  --insecure        do not verify ssl certs
   --user value      registry username [$GRABOID_USERNAME]
   --password value  registry password [$GRABOID_PASSWORD]
   --help, -h        show help
