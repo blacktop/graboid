@@ -18,14 +18,25 @@ import (
 	"github.com/apex/log"
 )
 
+// RegistryConfig registry config struct
+type RegistryConfig struct {
+	Endpoint       string
+	RegistryDomain string
+	Proxy          string
+	Insecure       bool
+	Username       string
+	Password       string
+	RepoName       string
+}
+
 // Registry registry object
 type Registry struct {
 	URL          *url.URL
 	Host         string
 	RegistryHost string
 	client       *http.Client
-	Token        string
-	Proxy        string
+	Auth         auth
+	Config       RegistryConfig
 }
 
 type auth struct {
@@ -72,9 +83,19 @@ func getProxy(proxy string) func(*http.Request) (*url.URL, error) {
 	return http.ProxyFromEnvironment
 }
 
+// TokenExpired returns wheither or not an auth token has expired
+func (reg *Registry) TokenExpired() bool {
+	duration := time.Since(reg.Auth.IssuedAt)
+	if int(duration.Seconds()) > reg.Auth.ExpiresIn {
+		log.Warn("auth token expired")
+		return true
+	}
+	return false
+}
+
 // NewRegistry creates a new Registry object
-func NewRegistry(endpoint, registryDomain, proxy string, insecure bool) (*Registry, error) {
-	u, e := url.Parse(endpoint)
+func NewRegistry(rc RegistryConfig) (*Registry, error) {
+	u, e := url.Parse(rc.Endpoint)
 	if e != nil {
 		return nil, e
 	}
@@ -84,8 +105,8 @@ func NewRegistry(endpoint, registryDomain, proxy string, insecure bool) (*Regist
 	origURL := u
 	host := fmt.Sprintf("%s://%s", u.Scheme, u.Host)
 	registryHost := ""
-	if registryDomain != "" {
-		u, e = url.Parse(registryDomain)
+	if rc.RegistryDomain != "" {
+		u, e = url.Parse(rc.RegistryDomain)
 		if e != nil {
 			return nil, e
 		}
@@ -96,26 +117,27 @@ func NewRegistry(endpoint, registryDomain, proxy string, insecure bool) (*Regist
 	}
 	client := &http.Client{
 		Transport: &http.Transport{
-			Proxy:           getProxy(proxy),
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: insecure},
+			Proxy:           getProxy(rc.Proxy),
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: rc.Insecure},
 		},
 	}
 	return &Registry{
 		URL:          origURL,
 		Host:         host,
 		RegistryHost: registryHost,
-		client:       client}, nil
+		client:       client,
+		Config:       rc}, nil
 }
 
 // GetToken retrives a docker registry API pull token
-func (reg *Registry) GetToken(username string, password string, reposName string) error {
-	u := fmt.Sprintf("https://auth.docker.io/token?service=registry.docker.io&scope=repository:%s:pull", reposName)
+func (reg *Registry) GetToken() error {
+	u := fmt.Sprintf("https://auth.docker.io/token?service=registry.docker.io&scope=repository:%s:pull", reg.Config.RepoName)
 	req, err := http.NewRequest("GET", u, nil)
 	if err != nil {
 		return err
 	}
-	if username != "" && password != "" {
-		req.SetBasicAuth(username, password)
+	if reg.Config.Username != "" && reg.Config.Password != "" {
+		req.SetBasicAuth(reg.Config.Username, reg.Config.Password)
 	}
 	res, err := reg.client.Do(req)
 	if err != nil {
@@ -138,7 +160,7 @@ func (reg *Registry) GetToken(username string, password string, reposName string
 		return err
 	}
 
-	reg.Token = a.Token
+	reg.Auth = *a
 	log.WithField("token", a.Token).Debugf("got token")
 
 	return nil
@@ -149,7 +171,7 @@ func (reg *Registry) doGet(url string, headers map[string]string) (*http.Respons
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", reg.Token))
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", reg.Auth.Token))
 	// add additional headers
 	if headers != nil {
 		for key, value := range headers {
@@ -170,6 +192,10 @@ func (reg *Registry) doGet(url string, headers map[string]string) (*http.Respons
 // ReposTags gets a list of the docker image tags
 func (reg *Registry) ReposTags(reposName string) (*Tags, error) {
 	url := fmt.Sprintf("https://index.docker.io/v2/%s/tags/list", reposName)
+
+	if reg.TokenExpired() {
+		reg.GetToken()
+	}
 
 	log.WithFields(log.Fields{
 		"url": url,
@@ -204,6 +230,11 @@ func (reg *Registry) ReposManifests(reposName, repoTag string) (*Manifests, erro
 		"image":   reposName,
 		"tag":     repoTag,
 	}).Debug("get manifests")
+
+	if reg.TokenExpired() {
+		reg.GetToken()
+	}
+
 	res, err := reg.doGet(url, headers)
 	if err != nil {
 		return nil, err
@@ -237,6 +268,11 @@ func (reg *Registry) RepoGetConfig(tempDir, reposName string, manifest *Manifest
 	url := fmt.Sprintf("%s/v2/%s/blobs/%s", reg.Host, reposName, manifest.Config.Digest)
 	headers["Accept"] = manifest.Config.MediaType
 	log.WithField("url", url).Debug("downloading config")
+
+	if reg.TokenExpired() {
+		reg.GetToken()
+	}
+
 	res, err := reg.doGet(url, headers)
 	if err != nil {
 		return "", err
@@ -271,6 +307,11 @@ func (reg *Registry) RepoGetLayers(tempDir, reposName string, manifest *Manifest
 		url := fmt.Sprintf("%s/v2/%s/blobs/%s", reg.Host, reposName, layer.Digest)
 		headers["Accept"] = layer.MediaType
 		log.WithField("url", url).Debug("downloading layer")
+
+		if reg.TokenExpired() {
+			reg.GetToken()
+		}
+
 		res, err := reg.doGet(url, headers)
 		if err != nil {
 			return nil, err

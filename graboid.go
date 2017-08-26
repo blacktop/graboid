@@ -59,12 +59,21 @@ func getFmtStr() string {
 }
 
 func initRegistry(reposName string, insecure bool) *Registry {
-	registry, err := NewRegistry(IndexDomain, RegistryDomain, Proxy, insecure)
+	config := RegistryConfig{
+		Endpoint:       IndexDomain,
+		RegistryDomain: RegistryDomain,
+		Proxy:          Proxy,
+		Insecure:       insecure,
+		RepoName:       reposName,
+		Username:       user,
+		Password:       passwd,
+	}
+	registry, err := NewRegistry(config)
 	if err != nil {
 		ctx.Fatal(err.Error())
 	}
 	log.Info("getting auth token")
-	err = registry.GetToken(user, passwd, reposName)
+	err = registry.GetToken()
 	if err != nil {
 		ctx.Fatal(err.Error())
 	}
