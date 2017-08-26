@@ -70,6 +70,12 @@ Import image into docker
 $ docker load -i blacktop_scifgif.tar
 ```
 
+### Download with a **Proxy**
+
+```sh
+$ graboid --proxy http://proxy.org:[PORT] blacktop/scifgif:latest
+```
+
 ### TODO
 
 -	[ ] parallelize the layer downloads to decrease the total time to download large images
