@@ -16,6 +16,11 @@ Install
 -	On [Linux](https://github.com/blacktop/graboid/blob/master/docs/linux.md)
 -	On [Windows](https://github.com/blacktop/graboid/blob/master/docs/windows.md)
 
+Why
+---
+
+This project was created for people whom can't install docker on their desktops, but still need to be able to download docker images from [DockerHUB](https://hub.docker.com) and then transfer them to another machine running docker.
+
 Getting Started
 ---------------
 
