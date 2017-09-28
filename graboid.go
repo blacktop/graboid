@@ -296,6 +296,11 @@ func main() {
 				ImageTag = "latest"
 			}
 
+			// test for official image name
+			if !strings.Contains(ImageName, "/") {
+				ImageName = "library/" + ImageName
+			}
+
 			ctx = log.WithFields(log.Fields{
 				"domain": IndexDomain,
 				"image":  ImageName,
