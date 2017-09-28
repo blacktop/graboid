@@ -228,7 +228,7 @@ func main() {
 			Name:        "proxy",
 			Value:       "",
 			Usage:       "HTTP/HTTPS proxy",
-			EnvVar:      "GRABOID_PROXY",
+			EnvVar:      "HTTPS_PROXY",
 			Destination: &Proxy,
 		},
 		cli.BoolFlag{

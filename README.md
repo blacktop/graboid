@@ -29,7 +29,7 @@ Usage: graboid [OPTIONS] COMMAND [arg...]
 
 Docker Image Downloader
 
-Version: 0.13.0, BuildTime: 20170816
+Version: 0.14.0, BuildTime: 20170816
 Author: blacktop - <https://github.com/blacktop>
 
 Options:
