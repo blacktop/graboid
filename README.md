@@ -29,7 +29,7 @@ Usage: graboid [OPTIONS] COMMAND [arg...]
 
 Docker Image Downloader
 
-Version: 0.12.0, BuildTime: 20170816
+Version: 0.13.0, BuildTime: 20170816
 Author: blacktop - <https://github.com/blacktop>
 
 Options:
@@ -85,7 +85,7 @@ $ graboid --proxy http://proxy.org:[PORT] blacktop/scifgif:latest
 
 -	[ ] parallelize the layer downloads to decrease the total time to download large images
 -	[ ] add image signature verification ([Notary](https://github.com/docker/notary)?)
--	[ ] ensure support for long connections for large downloads
+-	[x] ensure support for long connections for large downloads
 
 ### Issues
 
