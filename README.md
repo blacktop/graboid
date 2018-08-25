@@ -1,28 +1,24 @@
 ![logo](https://github.com/blacktop/graboid/raw/master/graboids.jpg)
 
-graboid
-=======
+# graboid
 
-[![Circle CI](https://circleci.com/gh/blacktop/graboid.png?style=shield)](https://circleci.com/gh/blacktop/graboid) [![GitHub release](https://img.shields.io/github/release/blacktop/graboid.svg)](https://github.com/https://github.com/blacktop/graboid/releases/releases) [![License](http://img.shields.io/:license-mit-blue.svg)](http://doge.mit-license.org)
+[![Circle CI](https://circleci.com/gh/blacktop/graboid.png?style=shield)](https://circleci.com/gh/blacktop/graboid) [![Github All Releases](https://img.shields.io/github/downloads/blacktop/graboid/total.svg)](https://github.com/blacktop/graboid) [![GitHub release](https://img.shields.io/github/release/blacktop/graboid.svg)](https://github.com/https://github.com/blacktop/graboid/releases/releases) [![License](http://img.shields.io/:license-mit-blue.svg)](http://doge.mit-license.org)
 
 > ~~Client~~**LESS** Docker Image Downloader
 
 ---
 
-Install
--------
+## Install
 
--	On [Mac](https://github.com/blacktop/graboid/blob/master/docs/macos.md)
--	On [Linux](https://github.com/blacktop/graboid/blob/master/docs/linux.md)
--	On [Windows](https://github.com/blacktop/graboid/blob/master/docs/windows.md)
+- On [Mac](https://github.com/blacktop/graboid/blob/master/docs/macos.md)
+- On [Linux](https://github.com/blacktop/graboid/blob/master/docs/linux.md)
+- On [Windows](https://github.com/blacktop/graboid/blob/master/docs/windows.md)
 
-Why
----
+## Why
 
 This project was created for people whom can't install docker on their desktops, but still need to be able to download docker images from [DockerHUB](https://hub.docker.com) and then transfer them to another machine running docker.
 
-Getting Started
----------------
+## Getting Started
 
 ```
 Usage: graboid [OPTIONS] COMMAND [arg...]
@@ -83,9 +79,9 @@ $ graboid --proxy http://proxy.org:[PORT] blacktop/scifgif:latest
 
 ### TODO
 
--	[ ] parallelize the layer downloads to decrease the total time to download large images
--	[ ] add image signature verification ([Notary](https://github.com/docker/notary)?)
--	[x] ensure support for long connections for large downloads
+- [ ] parallelize the layer downloads to decrease the total time to download large images
+- [ ] add image signature verification ([Notary](https://github.com/docker/notary)?)
+- [x] ensure support for long connections for large downloads
 
 ### Issues
 
