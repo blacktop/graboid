@@ -1,0 +1,19 @@
+# github.com/apex/log v1.1.0
+github.com/apex/log
+github.com/apex/log/handlers/cli
+# github.com/fatih/color v1.7.0
+github.com/fatih/color
+# github.com/mattn/go-colorable v0.0.9
+github.com/mattn/go-colorable
+# github.com/mattn/go-isatty v0.0.4
+github.com/mattn/go-isatty
+# github.com/mattn/go-runewidth v0.0.2
+github.com/mattn/go-runewidth
+# github.com/pkg/errors v0.8.0
+github.com/pkg/errors
+# github.com/urfave/cli v1.20.0
+github.com/urfave/cli
+# golang.org/x/sys v0.0.0-20181011152604-fa43e7bc11ba
+golang.org/x/sys/unix
+# gopkg.in/cheggaaa/pb.v1 v1.0.16
+gopkg.in/cheggaaa/pb.v1
