@@ -191,7 +191,7 @@ func (reg *Registry) doGet(url string, headers map[string]string) (*http.Respons
 
 // ReposTags gets a list of the docker image tags
 func (reg *Registry) ReposTags(reposName string) (*Tags, error) {
-	url := fmt.Sprintf("https://index.docker.io/v2/%s/tags/list", reposName)
+	url := fmt.Sprintf("https://registry-1.docker.io/v2/%s/tags/list", reposName)
 
 	if reg.TokenExpired() {
 		reg.GetToken()
