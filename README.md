@@ -1,4 +1,4 @@
-![logo](https://github.com/blacktop/graboid/raw/master/graboids.jpg)
+![logo](https://github.com/blacktop/graboid/raw/master/docs/graboids.jpg)
 
 # graboid
 
@@ -10,9 +10,9 @@
 
 ## Install
 
-- On [Mac](https://github.com/blacktop/graboid/blob/master/docs/macos.md)
-- On [Linux](https://github.com/blacktop/graboid/blob/master/docs/linux.md)
-- On [Windows](https://github.com/blacktop/graboid/blob/master/docs/windows.md)
+* On [Mac](https://github.com/blacktop/graboid/blob/master/docs/macos.md)
+* On [Linux](https://github.com/blacktop/graboid/blob/master/docs/linux.md)
+* On [Windows](https://github.com/blacktop/graboid/blob/master/docs/windows.md)
 
 ## Why
 
@@ -20,7 +20,7 @@ This project was created for people whom can't install docker on their desktops,
 
 ## Getting Started
 
-```
+``` 
 Usage: graboid [OPTIONS] COMMAND [arg...]
 
 Docker Image Downloader
@@ -48,40 +48,42 @@ Run 'graboid COMMAND --help' for more information on a command.
 
 ### List available image tags
 
-```sh
+``` sh
 $ graboid tags blacktop/scifgif
 ```
 
-```sh
-- Repository: blacktop/scifgif
-- Tags:
+``` sh
+
+* Repository: blacktop/scifgif
+* Tags:
+
     0.2.0
     latest
 ```
 
-### Download the docker image `blacktop/scifgif`
+### Download the docker image `blacktop/scifgif` 
 
-```sh
+``` sh
 $ graboid blacktop/scifgif:latest
 ```
 
 Import image into docker
 
-```sh
+``` sh
 $ docker load -i blacktop_scifgif.tar
 ```
 
 ### Download with a **Proxy**
 
-```sh
+``` sh
 $ graboid --proxy http://proxy.org:[PORT] blacktop/scifgif:latest
 ```
 
 ### TODO
 
-- [ ] parallelize the layer downloads to decrease the total time to download large images
-- [ ] add image signature verification ([Notary](https://github.com/docker/notary)?)
-- [x] ensure support for long connections for large downloads
+* [ ] parallelize the layer downloads to decrease the total time to download large images
+* [ ] add image signature verification ([Notary](https://github.com/docker/notary)?)
+* [x] ensure support for long connections for large downloads
 
 ### Issues
 
@@ -90,3 +92,4 @@ Find a bug? Want more features? Find something missing in the documentation? Let
 ### License
 
 MIT Copyright (c) 2017 **blacktop**
+
