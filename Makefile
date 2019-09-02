@@ -48,14 +48,25 @@ lint: ## Run all the linters
 		./...
 		markdownfmt -w README.md
 
-release: ## Create a new release from the VERSION
-	@echo "===> Creating Release"
-	git tag -a ${VERSION} -m ${MESSAGE}
-	git push origin ${VERSION}
-	goreleaser --rm-dist
+.PHONY: dry_release
+dry_release:
+	goreleaser --skip-publish --rm-dist --skip-validate
+
+.PHONY: bump
+bump: ## Incriment version patch number
+	@echo " > Bumping VERSION"
+	@hack/bump/version -p $(shell cat VERSION) > VERSION
+	@git commit -am "bumping version to $(shell cat VERSION)"
+	@git push
+
+.PHONY: release
+release: bump ## Create a new release from the VERSION
+	@echo " > Creating Release"
+	@hack/make/release $(shell cat VERSION)
+	@goreleaser --rm-dist
 
 destroy: ## Remove release from the VERSION
-	@echo "===> Deleting Release"
+	@echo " > Deleting Release"
 	rm -rf dist
 	git tag -d ${VERSION}
 	git push origin :refs/tags/${VERSION}
@@ -68,6 +79,7 @@ build: ## Build a beta version of malice
 
 clean: ## Clean up artifacts
 	rm *.tar
+	rm -rf dist
 
 # Absolutely awesome: http://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
 help:

@@ -16,3 +16,4 @@
 dist/
 alpine/
 bro/
+.vscode/settings.json

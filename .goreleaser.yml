@@ -29,3 +29,22 @@ brew:
   description: "Clientless docker image downloader."
   test: |
     system "#{bin}/graboid --version"
+
+checksum:
+  name_template: "checksums.txt"
+
+sign:
+  artifacts: checksum
+
+snapshot:
+  name_template: "{{ .Tag }}-next"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "update README"
+      - "Update README.md"
+      - "fixes"

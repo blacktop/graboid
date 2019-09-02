@@ -279,6 +279,20 @@ func main() {
 				return errors.New("please supply a image:tag to pull")
 			},
 		},
+		{
+			Name:  "extract",
+			Usage: "Extract files from images",
+			Action: func(c *cli.Context) error {
+
+				if c.Bool("verbose") {
+					log.SetLevel(log.DebugLevel)
+				}
+
+				log.Error("this has not been implimented yet")
+
+				return nil
+			},
+		},
 	}
 	app.Action = func(c *cli.Context) error {
 
