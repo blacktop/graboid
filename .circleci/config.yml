@@ -20,6 +20,7 @@ jobs:
     working_directory: /go/src/github.com/blacktop/graboid
     steps:
       - checkout
+      - setup_remote_docker
       - restore_cache:
           keys:
             - go-modules-v1-{{ checksum "go.sum" }}

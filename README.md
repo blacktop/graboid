@@ -2,7 +2,7 @@
 
 # graboid
 
-[![Circle CI](https://circleci.com/gh/blacktop/graboid.png?style=shield)](https://circleci.com/gh/blacktop/graboid) [![Github All Releases](https://img.shields.io/github/downloads/blacktop/graboid/total.svg)](https://github.com/blacktop/graboid) [![GitHub release](https://img.shields.io/github/release/blacktop/graboid.svg)](https://github.com/blacktop/graboid/releases) [![License](http://img.shields.io/:license-mit-blue.svg)](http://doge.mit-license.org)
+[![Circle CI](https://circleci.com/gh/blacktop/graboid.png?style=shield)](https://circleci.com/gh/blacktop/graboid) [![Build status](https://ci.appveyor.com/api/projects/status/go99ieg0mqpmyi7g?svg=true)](https://ci.appveyor.com/project/blacktop/graboid) [![Github All Releases](https://img.shields.io/github/downloads/blacktop/graboid/total.svg)](https://github.com/blacktop/graboid) [![GitHub release](https://img.shields.io/github/release/blacktop/graboid.svg)](https://github.com/blacktop/graboid/releases) [![License](http://img.shields.io/:license-mit-blue.svg)](http://doge.mit-license.org)
 
 > ~~Client~~**LESS** Docker Image Downloader
 
