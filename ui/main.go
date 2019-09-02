@@ -1,5 +1,3 @@
-// +build ignore
-
 package main
 
 import (
@@ -11,8 +9,11 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"os/signal"
 	"path/filepath"
 	"strings"
+	"syscall"
+	"time"
 
 	humanize "github.com/dustin/go-humanize"
 	ui "github.com/gizak/termui/v3"
@@ -71,6 +72,14 @@ func makeNodes(r io.Reader) []*widgets.TreeNode {
 }
 
 func main() {
+
+	c := make(chan os.Signal, 2)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-c
+		os.Exit(0)
+	}()
+
 	if len(os.Args) == 0 {
 		log.Fatal("you must suppy a docker image tar to extract from")
 	}
@@ -96,12 +105,27 @@ func main() {
 	l.TextStyle = ui.NewStyle(ui.ColorYellow)
 	l.WrapText = false
 	l.SetNodes(nodes)
+	l.Title = "Layers"
 
 	x, y := ui.TerminalDimensions()
 
 	l.SetRect(0, 0, x, y)
 
-	ui.Render(l)
+	p := widgets.NewParagraph()
+	p.Text = "<> This row has 3 columns\n<- Widgets can be stacked up like left side\n<- Stacked widgets are treated as a single widget"
+	p.Title = "Demonstration"
+
+	grid := ui.NewGrid()
+	termWidth, termHeight := ui.TerminalDimensions()
+	grid.SetRect(0, 0, termWidth, termHeight)
+	grid.Set(
+		ui.NewRow(1.0/1,
+			ui.NewCol(1.0/2, l),
+			ui.NewCol(1.0/2, p),
+		),
+	)
+
+	ui.Render(grid)
 
 	previousKey := ""
 	uiEvents := ui.PollEvents()
@@ -130,11 +154,12 @@ func main() {
 			l.ScrollTop()
 		case "<Space>":
 			dateCmd := exec.Command("say", "-v", "Fiona", l.SelectedNode().Value.String())
-			go dateCmd.Output()
+			dateCmd.Output()
 			if l.SelectedNode().Nodes != nil {
 				for _, node := range l.SelectedNode().Nodes {
 					dateCmd := exec.Command("say", "-v", "Fiona", node.Value.String())
 					dateCmd.Output()
+					time.Sleep(2 * time.Second)
 				}
 			}
 			// return
