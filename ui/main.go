@@ -8,15 +8,13 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"os"
-	"os/signal"
-	"regexp"
+	"path/filepath"
 	"strings"
-	"syscall"
+
+	"github.com/apex/log"
 
 	"github.com/blacktop/graboid/pkg/image"
-	humanize "github.com/dustin/go-humanize"
 	ui "github.com/gizak/termui/v3"
 	"github.com/gizak/termui/v3/widgets"
 )
@@ -96,27 +94,15 @@ func parseImage(r io.Reader, m *image.Manifest) (*image.Image, error) {
 	return nil, nil
 }
 
-func parseLayers(r io.Reader, m *image.Manifest, i *image.Image) []*widgets.TreeNode {
+func parseFileSystem(r io.Reader) (*image.Layer, error) {
 
-	nodes := []*widgets.TreeNode{}
-
-	for _, layer := range m.Layers {
-		nodes = append(nodes, &widgets.TreeNode{
-			Value: nodeValue(strings.TrimSuffix(layer, ".tar")),
-			Nodes: nil,
-		})
-	}
-
-	zr, err := gzip.NewReader(r)
+	gz, err := gzip.NewReader(r)
 	if err != nil {
-		// log.Fatal(err)
-		return nodes
+		return nil, err
 	}
-	defer zr.Close()
+	defer gz.Close()
 
-	tr := tar.NewReader(zr)
-
-	node := &widgets.TreeNode{}
+	tr := tar.NewReader(gz)
 
 	for {
 		hdr, err := tr.Next()
@@ -124,47 +110,97 @@ func parseLayers(r io.Reader, m *image.Manifest, i *image.Image) []*widgets.Tree
 			break // End of archive
 		}
 		if err != nil {
-			log.Fatal(err)
+			return nil, err
+		}
+
+		switch hdr.Typeflag {
+		case tar.TypeDir:
+			fmt.Printf("[DIRECTORY]: %s\n", hdr.Name)
+		case tar.TypeReg:
+			fmt.Println(hdr.Name)
+		}
+	}
+
+	return nil, nil
+}
+
+func parseLayers(f *os.File) ([]*image.Layer, error) {
+
+	var manifests []image.Manifest
+	var img *image.Image
+
+	gz, err := gzip.NewReader(bufio.NewReader(f))
+	if err != nil {
+		return nil, err
+	}
+	defer gz.Close()
+
+	tr := tar.NewReader(gz)
+
+	for {
+		hdr, err := tr.Next()
+		if err == io.EOF {
+			break // End of archive
+		}
+		if err != nil {
+			return nil, err
 		}
 
 		fmt.Println(hdr.Name)
-		if hdr.FileInfo().IsDir() {
-			if node.Value == nil {
-				node.Value = nodeValue(hdr.Name)
-			} else {
-				nodes = append(nodes, node)
-				node = &widgets.TreeNode{}
+
+		switch hdr.Typeflag {
+		case tar.TypeDir:
+			log.Error("should not have gotten a directory")
+		case tar.TypeReg:
+			if strings.EqualFold(filepath.Ext(hdr.Name), ".json") {
+				if strings.EqualFold(hdr.Name, "manifest.json") {
+					rawJSON, err := ioutil.ReadAll(tr)
+					if err != nil {
+						return nil, err
+					}
+					if err := json.Unmarshal(rawJSON, &manifests); err != nil {
+						return nil, err
+					}
+					fmt.Println(manifests)
+					// } else if strings.EqualFold(hdr.Name, m.Config) {
+				} else {
+					rawJSON, err := ioutil.ReadAll(tr)
+					if err != nil {
+						return nil, err
+					}
+					img, err = image.NewFromJSON(rawJSON)
+					if err != nil {
+						return nil, err
+					}
+					fmt.Println(img)
+				}
+			} else if strings.EqualFold(filepath.Ext(hdr.Name), ".tar") {
+				layer, err := parseFileSystem(tr)
+				if err != nil {
+					return nil, err
+				}
+				fmt.Println(layer)
 			}
-
-		} else {
-			// if strings.EqualFold(filepath.Ext(hdr.Name), ".tar") {
-			// 	for _, n := range makeNodes(tr) {
-			// 		nodes = append(nodes, n)
-			// 	}
-			// }
-			node.Nodes = append(node.Nodes, &widgets.TreeNode{
-				Value: nodeValue(fmt.Sprintf("%s (%s)", hdr.Name, humanize.Bytes(uint64(hdr.Size)))),
-				Nodes: nil,
-			})
 		}
-		// if _, err := io.Copy(os.Stdout, tr); err != nil {
-		// 	log.Fatal(err)
-		// }
 	}
+	return nil, nil
+}
 
-	nodes = append(nodes, node)
+func makeNodes(layers []*image.Layer) []*widgets.TreeNode {
+
+	var nodes []*widgets.TreeNode
 
 	return nodes
 }
 
 func main() {
 
-	c := make(chan os.Signal, 2)
-	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
-	go func() {
-		<-c
-		os.Exit(0)
-	}()
+	// c := make(chan os.Signal, 2)
+	// signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	// go func() {
+	// 	<-c
+	// 	os.Exit(0)
+	// }()
 
 	if len(os.Args) == 0 {
 		log.Fatal("you must suppy a docker image tar to extract from")
@@ -179,30 +215,33 @@ func main() {
 	}
 	defer f.Close()
 
-	m, err := parseManifest(bufio.NewReader(f))
+	// m, err := parseManifest(bufio.NewReader(f))
+	// if err != nil {
+	// 	panic(err)
+	// }
+
+	// f.Seek(0, 0)
+
+	// i, err := parseImage(bufio.NewReader(f), m)
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// commands := ""
+	// space := regexp.MustCompile(`\s+`)
+	// for _, h := range i.History {
+	// 	if !h.EmptyLayer {
+	// 		commands = fmt.Sprintln(space.ReplaceAllString(h.CreatedBy, " "))
+	// 		break
+	// 	}
+	// }
+
+	// f.Seek(0, 0)
+
+	layers, err := parseLayers(f)
 	if err != nil {
 		panic(err)
 	}
-
-	f.Seek(0, 0)
-
-	i, err := parseImage(bufio.NewReader(f), m)
-	if err != nil {
-		panic(err)
-	}
-	commands := ""
-	space := regexp.MustCompile(`\s+`)
-	for _, h := range i.History {
-		if !h.EmptyLayer {
-			commands = fmt.Sprintln(space.ReplaceAllString(h.CreatedBy, " "))
-			break
-		}
-	}
-
-	f.Seek(0, 0)
-
-	nodes := parseLayers(bufio.NewReader(f), m, i)
-
+	return
 	if err := ui.Init(); err != nil {
 		log.Fatalf("failed to initialize termui: %v", err)
 	}
@@ -211,7 +250,7 @@ func main() {
 	l := widgets.NewTree()
 	l.TextStyle = ui.NewStyle(ui.ColorYellow)
 	l.WrapText = false
-	l.SetNodes(nodes)
+	l.SetNodes(makeNodes(layers))
 	l.Title = "Layers"
 	l.TitleStyle.Fg = ui.ColorCyan
 	l.PaddingTop = 1
@@ -221,7 +260,8 @@ func main() {
 	l.SetRect(0, 0, x, y)
 
 	cmds := widgets.NewParagraph()
-	cmds.Text = commands
+	// TODO
+	// cmds.Text = commands
 	cmds.Title = "Commands"
 	cmds.TitleStyle.Fg = ui.ColorCyan
 	cmds.PaddingTop = 1
@@ -231,7 +271,9 @@ func main() {
 	cmds.WrapText = false
 
 	t := widgets.NewParagraph()
-	t.Text = m.RepoTags[0]
+	t.Text = "blacktop/ghidra"
+	// TODO
+	// t.Text = m.RepoTags[0]
 	t.Title = "Image"
 	t.PaddingTop = 1
 	t.PaddingLeft = 2
@@ -265,55 +307,55 @@ func main() {
 			return
 		case "j", "<Down>":
 			l.ScrollDown()
-			idx := 0
-			found := false
-			for i, v := range m.Layers {
-				if strings.EqualFold(strings.TrimSuffix(v, ".tar"), l.SelectedNode().Value.String()) {
-					idx = i
-					found = true
-					break
-				}
-			}
-			if found {
-				ydx := 0
-				for _, h := range i.History {
-					if !h.EmptyLayer {
-						if ydx == idx {
-							// TODO: replace ; with new line also
-							cmds.Text = strings.ReplaceAll(strings.TrimPrefix(h.CreatedBy, "/bin/sh -c "), "&&", "\n")
-							// p.Text = space.ReplaceAllString(strings.TrimPrefix(h.CreatedBy, "/bin/sh -c "), " ")
-							ui.Render(grid)
-							break
-						}
-						ydx++
-					}
-				}
-			}
+			// idx := 0
+			// found := false
+			// for i, v := range m.Layers {
+			// 	if strings.EqualFold(strings.TrimSuffix(v, ".tar"), l.SelectedNode().Value.String()) {
+			// 		idx = i
+			// 		found = true
+			// 		break
+			// 	}
+			// }
+			// if found {
+			// 	ydx := 0
+			// 	for _, h := range i.History {
+			// 		if !h.EmptyLayer {
+			// 			if ydx == idx {
+			// 				// TODO: replace ; with new line also
+			// 				cmds.Text = strings.ReplaceAll(strings.TrimPrefix(h.CreatedBy, "/bin/sh -c "), "&&", "\n")
+			// 				// p.Text = space.ReplaceAllString(strings.TrimPrefix(h.CreatedBy, "/bin/sh -c "), " ")
+			// 				ui.Render(grid)
+			// 				break
+			// 			}
+			// 			ydx++
+			// 		}
+			// 	}
+			// }
 		case "k", "<Up>":
 			l.ScrollUp()
-			idx := 0
-			found := false
-			for i, v := range m.Layers {
-				if strings.EqualFold(strings.TrimSuffix(v, ".tar"), l.SelectedNode().Value.String()) {
-					idx = i
-					found = true
-					break
-				}
-			}
-			if found {
-				ydx := 0
-				for _, h := range i.History {
-					if !h.EmptyLayer {
-						if ydx == idx {
-							cmds.Text = strings.ReplaceAll(strings.TrimPrefix(h.CreatedBy, "/bin/sh -c "), "&&", "\n")
-							// p.Text = space.ReplaceAllString(strings.TrimPrefix(h.CreatedBy, "/bin/sh -c "), " ")
-							ui.Render(grid)
-							break
-						}
-						ydx++
-					}
-				}
-			}
+			// idx := 0
+			// found := false
+			// for i, v := range m.Layers {
+			// 	if strings.EqualFold(strings.TrimSuffix(v, ".tar"), l.SelectedNode().Value.String()) {
+			// 		idx = i
+			// 		found = true
+			// 		break
+			// 	}
+			// }
+			// if found {
+			// 	ydx := 0
+			// 	for _, h := range i.History {
+			// 		if !h.EmptyLayer {
+			// 			if ydx == idx {
+			// 				cmds.Text = strings.ReplaceAll(strings.TrimPrefix(h.CreatedBy, "/bin/sh -c "), "&&", "\n")
+			// 				// p.Text = space.ReplaceAllString(strings.TrimPrefix(h.CreatedBy, "/bin/sh -c "), " ")
+			// 				ui.Render(grid)
+			// 				break
+			// 			}
+			// 			ydx++
+			// 		}
+			// 	}
+			// }
 		case "<C-d>":
 			l.ScrollHalfPageDown()
 		case "<C-u>":

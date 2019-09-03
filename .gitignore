@@ -19,3 +19,5 @@ alpine/
 bro/
 .vscode/settings.json
 *.gz
+ui/__debug_bin
+.DS_Store
