@@ -1,9 +1,12 @@
 package main
 
 import (
+	"archive/tar"
+	"compress/gzip"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -14,6 +17,7 @@ import (
 
 	"github.com/apex/log"
 	clihander "github.com/apex/log/handlers/cli"
+	"github.com/blacktop/graboid/pkg/registry"
 	"github.com/urfave/cli"
 )
 
@@ -58,8 +62,8 @@ func getFmtStr() string {
 	return "\033[1m%s\033[0m"
 }
 
-func initRegistry(reposName string, insecure bool) *Registry {
-	config := RegistryConfig{
+func initRegistry(reposName string, insecure bool) *registry.Registry {
+	config := registry.Config{
 		Endpoint:       IndexDomain,
 		RegistryDomain: RegistryDomain,
 		Proxy:          Proxy,
@@ -68,7 +72,7 @@ func initRegistry(reposName string, insecure bool) *Registry {
 		Username:       user,
 		Password:       passwd,
 	}
-	registry, err := NewRegistry(config)
+	registry, err := registry.New(config)
 	if err != nil {
 		ctx.Fatal(err.Error())
 	}
@@ -127,6 +131,47 @@ func createManifest(tempDir, confFile string, layerFiles []string) (string, erro
 	}
 
 	return tmpfn, nil
+}
+
+func tarFiles(srcDir, tarName string) error {
+	tarfile, err := os.Create(tarName)
+	if err != nil {
+		return err
+	}
+	defer tarfile.Close()
+
+	gw := gzip.NewWriter(tarfile)
+	defer gw.Close()
+	tarball := tar.NewWriter(gw)
+	defer tarball.Close()
+
+	return filepath.Walk(srcDir,
+		func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+
+			header, err := tar.FileInfoHeader(info, info.Name())
+			if err != nil {
+				return err
+			}
+			if err = tarball.WriteHeader(header); err != nil {
+				return err
+			}
+
+			if info.IsDir() {
+				return nil
+			}
+
+			log.WithField("path", path).Debug("taring file")
+			file, err := os.Open(path)
+			if err != nil {
+				return err
+			}
+			defer file.Close()
+			_, err = io.Copy(tarball, file)
+			return err
+		})
 }
 
 // DownloadImage downloads docker image

@@ -1,4 +1,4 @@
-package main
+package registry
 
 import (
 	"crypto/tls"
@@ -18,8 +18,8 @@ import (
 	"github.com/apex/log"
 )
 
-// RegistryConfig registry config struct
-type RegistryConfig struct {
+// Config registry config struct
+type Config struct {
 	Endpoint       string
 	RegistryDomain string
 	Proxy          string
@@ -36,7 +36,7 @@ type Registry struct {
 	RegistryHost string
 	client       *http.Client
 	Auth         auth
-	Config       RegistryConfig
+	Config       Config
 }
 
 type auth struct {
@@ -93,8 +93,8 @@ func (reg *Registry) TokenExpired() bool {
 	return false
 }
 
-// NewRegistry creates a new Registry object
-func NewRegistry(rc RegistryConfig) (*Registry, error) {
+// New creates a new Registry object
+func New(rc Config) (*Registry, error) {
 	u, e := url.Parse(rc.Endpoint)
 	if e != nil {
 		return nil, e
