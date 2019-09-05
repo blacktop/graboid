@@ -12,7 +12,8 @@
             "program": "${workspaceRoot}/ui/main.go",
             "env": {},
             "args": [
-                "${workspaceRoot}/blacktop_ghidra.tar"
+                "${workspaceRoot}/blacktop_bro.tar.gz"
+                // "${workspaceRoot}/blacktop_ghidra.tar"
             ]
         }
     ]

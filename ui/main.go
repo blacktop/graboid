@@ -25,76 +25,27 @@ func (nv nodeValue) String() string {
 	return string(nv)
 }
 
-func parseManifest(r io.Reader) (*image.Manifest, error) {
+func parseFileSystem(files []image.File) (*image.FileTree, error) {
 
-	manifests := []image.Manifest{}
+	tree := image.NewFileTree()
+	tree.Name = "test"
 
-	zr, err := gzip.NewReader(r)
-	if err != nil {
-		return nil, err
-	}
-	defer zr.Close()
+	for _, file := range files {
 
-	tr := tar.NewReader(zr)
+		tree.FileSize += uint64(file.Data.Size())
 
-	for {
-		hdr, err := tr.Next()
-		if err == io.EOF {
-			break // End of archive
-		}
+		_, _, err := tree.AddPath(file.Path, file)
 		if err != nil {
 			return nil, err
 		}
-
-		if strings.EqualFold(hdr.Name, "manifest.json") {
-			rawJSON, err := ioutil.ReadAll(tr)
-			if err != nil {
-				return nil, err
-			}
-			if err := json.Unmarshal(rawJSON, &manifests); err != nil {
-				return nil, err
-			}
-			return &manifests[0], nil
-		}
 	}
-	return nil, nil
+
+	return tree, nil
 }
 
-func parseImage(r io.Reader, m *image.Manifest) (*image.Image, error) {
+func parseLayer(name string, r io.Reader) (*image.Layer, error) {
 
-	zr, err := gzip.NewReader(r)
-	if err != nil {
-		return nil, err
-	}
-	defer zr.Close()
-
-	tr := tar.NewReader(zr)
-
-	for {
-		hdr, err := tr.Next()
-		if err == io.EOF {
-			break // End of archive
-		}
-		if err != nil {
-			return nil, err
-		}
-
-		if strings.EqualFold(hdr.Name, m.Config) {
-			rawJSON, err := ioutil.ReadAll(tr)
-			if err != nil {
-				return nil, err
-			}
-			img, err := image.NewFromJSON(rawJSON)
-			if err != nil {
-				return nil, err
-			}
-			return img, nil
-		}
-	}
-	return nil, nil
-}
-
-func parseFileSystem(r io.Reader) (*image.Layer, error) {
+	var files []image.File
 
 	gz, err := gzip.NewReader(r)
 	if err != nil {
@@ -106,28 +57,46 @@ func parseFileSystem(r io.Reader) (*image.Layer, error) {
 
 	for {
 		hdr, err := tr.Next()
+
 		if err == io.EOF {
 			break // End of archive
 		}
 		if err != nil {
 			return nil, err
 		}
-
-		switch hdr.Typeflag {
-		case tar.TypeDir:
-			fmt.Printf("[DIRECTORY]: %s\n", hdr.Name)
-		case tar.TypeReg:
-			fmt.Println(hdr.Name)
-		}
+		fmt.Println(hdr.Name)
+		files = append(files, image.File{
+			Name: hdr.FileInfo().Name(),
+			Path: hdr.Name,
+			Data: hdr.FileInfo(),
+		})
 	}
 
-	return nil, nil
+	tree, err := parseFileSystem(files)
+	if err != nil {
+		return nil, err
+	}
+	node, err := tree.GetNode("usr/local/share/bro/policy/protocols/ssl/")
+	if err != nil {
+		log.WithError(err).Error("Shit went sideways")
+	} else {
+		fmt.Println(node.Children)
+	}
+
+	layer := &image.Layer{
+		Root: name,
+		// Files: parsedFiles,
+	}
+
+	return layer, nil
+
 }
 
-func parseLayers(f *os.File) ([]*image.Layer, error) {
+func parseRepo(f *os.File) (*image.Repo, error) {
 
 	var manifests []image.Manifest
 	var img *image.Image
+	var layers []*image.Layer
 
 	gz, err := gzip.NewReader(bufio.NewReader(f))
 	if err != nil {
@@ -161,7 +130,6 @@ func parseLayers(f *os.File) ([]*image.Layer, error) {
 					if err := json.Unmarshal(rawJSON, &manifests); err != nil {
 						return nil, err
 					}
-					fmt.Println(manifests)
 					// } else if strings.EqualFold(hdr.Name, m.Config) {
 				} else {
 					rawJSON, err := ioutil.ReadAll(tr)
@@ -172,18 +140,38 @@ func parseLayers(f *os.File) ([]*image.Layer, error) {
 					if err != nil {
 						return nil, err
 					}
-					fmt.Println(img)
 				}
 			} else if strings.EqualFold(filepath.Ext(hdr.Name), ".tar") {
-				layer, err := parseFileSystem(tr)
+				layer, err := parseLayer(strings.TrimSuffix(hdr.Name, filepath.Ext(hdr.Name)), tr)
 				if err != nil {
 					return nil, err
 				}
-				fmt.Println(layer)
+				layers = append(layers, layer)
 			}
 		}
 	}
-	return nil, nil
+
+	repo := &image.Repo{
+		Tag:           manifests[0].RepoTags[0],
+		Created:       img.Created.String(),
+		DockerVersion: img.DockerVersion,
+	}
+
+	nonEmptyLayerIdx := 0
+
+	for _, history := range img.History {
+		if !history.EmptyLayer {
+			for _, layer := range layers {
+				if strings.Contains(manifests[0].Layers[nonEmptyLayerIdx], layer.Root) {
+					layer.Command = history.CreatedBy
+					repo.Layers = append(repo.Layers, layer)
+				}
+			}
+			nonEmptyLayerIdx++
+		}
+	}
+
+	return repo, nil
 }
 
 func makeNodes(layers []*image.Layer) []*widgets.TreeNode {
@@ -215,33 +203,12 @@ func main() {
 	}
 	defer f.Close()
 
-	// m, err := parseManifest(bufio.NewReader(f))
-	// if err != nil {
-	// 	panic(err)
-	// }
-
-	// f.Seek(0, 0)
-
-	// i, err := parseImage(bufio.NewReader(f), m)
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// commands := ""
-	// space := regexp.MustCompile(`\s+`)
-	// for _, h := range i.History {
-	// 	if !h.EmptyLayer {
-	// 		commands = fmt.Sprintln(space.ReplaceAllString(h.CreatedBy, " "))
-	// 		break
-	// 	}
-	// }
-
-	// f.Seek(0, 0)
-
-	layers, err := parseLayers(f)
+	repo, err := parseRepo(f)
 	if err != nil {
 		panic(err)
 	}
 	return
+
 	if err := ui.Init(); err != nil {
 		log.Fatalf("failed to initialize termui: %v", err)
 	}
@@ -250,13 +217,11 @@ func main() {
 	l := widgets.NewTree()
 	l.TextStyle = ui.NewStyle(ui.ColorYellow)
 	l.WrapText = false
-	l.SetNodes(makeNodes(layers))
+	l.SetNodes(makeNodes(repo.Layers))
 	l.Title = "Layers"
 	l.TitleStyle.Fg = ui.ColorCyan
 	l.PaddingTop = 1
-
 	x, y := ui.TerminalDimensions()
-
 	l.SetRect(0, 0, x, y)
 
 	cmds := widgets.NewParagraph()

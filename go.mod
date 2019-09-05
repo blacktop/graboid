@@ -9,6 +9,7 @@ require (
 	github.com/dustin/go-humanize v1.0.0
 	github.com/fatih/color v1.7.0 // indirect
 	github.com/gizak/termui/v3 v3.1.0
+	github.com/google/uuid v1.1.1
 	github.com/mattn/go-colorable v0.0.9 // indirect
 	github.com/mattn/go-isatty v0.0.4 // indirect
 	github.com/opencontainers/go-digest v1.0.0-rc1

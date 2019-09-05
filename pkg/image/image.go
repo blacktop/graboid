@@ -3,10 +3,10 @@ package image
 import (
 	"encoding/json"
 	"errors"
-	"time"
-
 	"github.com/docker/docker/api/types/container"
 	"github.com/opencontainers/go-digest"
+	"os"
+	"time"
 )
 
 type diffID digest.Digest
@@ -68,6 +68,31 @@ type Manifest struct {
 // Manifests is an array of Manifest
 type Manifests []Manifest
 
+// Repo is a image repo
+type Repo struct {
+	Tag           string
+	DockerVersion string
+	Created       string
+	Layers        []*Layer
+}
+
+// Layer is a image layer
+type Layer struct {
+	Root    string
+	Size    int
+	Command string
+	Files   []File
+}
+
+// File is a layer file object
+type File struct {
+	Name string // base name of the file
+	Path string
+	Data os.FileInfo
+
+	Children []File
+}
+
 // RawJSON returns the immutable JSON associated with the image.
 func (img *Image) RawJSON() []byte {
 	return img.rawJSON
@@ -76,30 +101,12 @@ func (img *Image) RawJSON() []byte {
 // NewFromJSON creates an Image configuration from json.
 func NewFromJSON(src []byte) (*Image, error) {
 	img := &Image{}
-
 	if err := json.Unmarshal(src, img); err != nil {
 		return nil, err
 	}
 	if img.RootFS == nil {
 		return nil, errors.New("invalid image JSON, no RootFS key")
 	}
-
 	img.rawJSON = src
-
 	return img, nil
-}
-
-type layerFile struct {
-	IsDir    bool
-	Name     string
-	Size     int
-	Children []layerFile
-}
-
-// Layer is a image layer
-type Layer struct {
-	Root    string
-	Size    int
-	Command string
-	Files   []layerFile
 }
