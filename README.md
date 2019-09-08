@@ -8,6 +8,8 @@
 
 ---
 
+## Install
+
 ### macOS
 
 ``` bash
