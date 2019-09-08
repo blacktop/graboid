@@ -1,112 +1,273 @@
 package image
 
 import (
+	"archive/tar"
+	"compress/gzip"
 	"encoding/json"
-	"errors"
-	"github.com/docker/docker/api/types/container"
-	"github.com/opencontainers/go-digest"
+	"fmt"
+	"io"
+	"io/ioutil"
 	"os"
-	"time"
+	"path/filepath"
+	"strings"
+
+	"github.com/gizak/termui/v3/widgets"
+	"github.com/wagoodman/dive/filetree"
 )
 
-type diffID digest.Digest
+// Parse parses an image tar.gz file
+func Parse(r io.Reader) (*Tar, error) {
 
-// Image is the image's config object
-type Image struct {
-	// ID is a unique 64 character identifier of the image
-	ID string `json:"id,omitempty"`
-	// Parent is the ID of the parent image
-	Parent string `json:"parent,omitempty"`
-	// Comment is the commit message that was set when committing the image
-	Comment string `json:"comment,omitempty"`
-	// Created is the timestamp at which the image was created
-	Created time.Time `json:"created"`
-	// Container is the id of the container used to commit
-	Container string `json:"container,omitempty"`
-	// ContainerConfig is the configuration of the container that is committed into the image
-	ContainerConfig container.Config `json:"container_config,omitempty"`
-	// DockerVersion specifies the version of Docker that was used to build the image
-	DockerVersion string         `json:"docker_version,omitempty"`
-	History       []imageHistory `json:"history,omitempty"`
-	// Author is the name of the author that was specified when committing the image
-	Author string `json:"author,omitempty"`
-	// Config is the configuration of the container received from the client
-	Config *container.Config `json:"config,omitempty"`
-	// Architecture is the hardware that the image is built and runs on
-	Architecture string `json:"architecture,omitempty"`
-	// OS is the operating system used to build and run the image
-	OS string `json:"os,omitempty"`
-	// Size is the total size of the image including all layers it is composed of
-	Size   int64        `json:",omitempty"`
-	RootFS *imageRootFS `json:"rootfs,omitempty"`
+	i := &Tar{}
 
-	// rawJSON caches the immutable JSON associated with this image.
-	rawJSON []byte
-}
-
-type imageRootFS struct {
-	Type      string   `json:"type"`
-	DiffIDs   []diffID `json:"diff_ids,omitempty"`
-	BaseLayer string   `json:"base_layer,omitempty"`
-}
-
-type imageHistory struct {
-	Created    time.Time `json:"created"`
-	Author     string    `json:"author,omitempty"`
-	CreatedBy  string    `json:"created_by,omitempty"`
-	Comment    string    `json:"comment,omitempty"`
-	EmptyLayer bool      `json:"empty_layer,omitempty"`
-}
-
-// Manifest is the image manifest struct
-type Manifest struct {
-	Config   string   `json:"Config,omitempty"`
-	Layers   []string `json:"Layers,omitempty"`
-	RepoTags []string `json:"RepoTags,omitempty"`
-}
-
-// Manifests is an array of Manifest
-type Manifests []Manifest
-
-// Repo is a image repo
-type Repo struct {
-	Tag           string
-	DockerVersion string
-	Created       string
-	Layers        []*Layer
-}
-
-// Layer is a image layer
-type Layer struct {
-	Root    string
-	Size    int
-	Command string
-	Files   []File
-}
-
-// File is a layer file object
-type File struct {
-	Name string // base name of the file
-	Path string
-	Data os.FileInfo
-
-	Children []File
-}
-
-// RawJSON returns the immutable JSON associated with the image.
-func (img *Image) RawJSON() []byte {
-	return img.rawJSON
-}
-
-// NewFromJSON creates an Image configuration from json.
-func NewFromJSON(src []byte) (*Image, error) {
-	img := &Image{}
-	if err := json.Unmarshal(src, img); err != nil {
+	gz, err := gzip.NewReader(r)
+	if err != nil {
 		return nil, err
 	}
-	if img.RootFS == nil {
-		return nil, errors.New("invalid image JSON, no RootFS key")
+	defer gz.Close()
+
+	tr := tar.NewReader(gz)
+
+	for {
+		hdr, err := tr.Next()
+
+		if err == io.EOF {
+			break // End of archive
+		}
+		if err != nil {
+			return nil, err
+		}
+
+		switch hdr.Typeflag {
+		case tar.TypeSymlink:
+		case tar.TypeReg:
+			switch filepath.Ext(hdr.Name) {
+			case ".json":
+				if strings.EqualFold(hdr.Name, "manifest.json") {
+					rawJSON, err := ioutil.ReadAll(tr)
+					if err != nil {
+						return nil, err
+					}
+					var manifests []Manifest
+					if err := json.Unmarshal(rawJSON, &manifests); err != nil {
+						return nil, err
+					}
+					i.Manifest = manifests[0]
+				} else {
+					rawJSON, err := ioutil.ReadAll(tr)
+					if err != nil {
+						return nil, err
+					}
+					i.Config, err = NewFromJSON(rawJSON)
+					if err != nil {
+						return nil, err
+					}
+				}
+			case ".tar":
+				// if err = i.processLayerTar(hdr.Name, currentLayer, tar.NewReader(tr)); err != nil {
+				if err = i.processLayerTar(hdr.Name, 0, tr); err != nil {
+					return nil, err
+				}
+			}
+		}
 	}
-	img.rawJSON = src
-	return img, nil
+
+	i.Tag = i.Manifest.RepoTags[0]
+	i.Layers = make([]Layer, len(i.RefTrees))
+
+	nonEmptyLayerIdx := 0 // TODO
+
+	for _, history := range i.Config.History {
+		if !history.EmptyLayer {
+			for _, tree := range i.RefTrees {
+				if strings.Contains(i.Manifest.Layers[nonEmptyLayerIdx], tree.Name) {
+					history.Size = tree.FileSize
+					i.Layers[nonEmptyLayerIdx] = &dockerLayer{
+						history: history,
+						index:   nonEmptyLayerIdx,
+						tree:    tree,
+						tarPath: i.Manifest.Layers[nonEmptyLayerIdx],
+					}
+				}
+			}
+			nonEmptyLayerIdx++
+		}
+	}
+
+	return i, nil
+}
+
+func (i *Tar) processLayerTar(name string, layerIdx uint, reader io.Reader) error {
+	tree := filetree.NewFileTree()
+	tree.Name = name
+
+	fileInfos, err := i.getFileList(reader)
+	if err != nil {
+		return err
+	}
+
+	for _, element := range fileInfos {
+		tree.FileSize += uint64(element.Size)
+
+		_, _, err := tree.AddPath(element.Path, element)
+		if err != nil {
+			return err
+		}
+	}
+
+	i.RefTrees = append(i.RefTrees, tree) // TODO
+	return nil
+}
+
+func (i *Tar) getFileList(r io.Reader) ([]filetree.FileInfo, error) {
+
+	var files []filetree.FileInfo
+
+	gz, err := gzip.NewReader(r)
+	if err != nil {
+		return nil, err
+	}
+	defer gz.Close()
+
+	tr := tar.NewReader(gz)
+
+	for {
+		header, err := tr.Next()
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			return nil, err
+		}
+
+		name := header.Name
+
+		switch header.Typeflag {
+		case tar.TypeXGlobalHeader:
+			return nil, fmt.Errorf("unexptected tar file: (XGlobalHeader): type=%v name=%s", header.Typeflag, name)
+		case tar.TypeXHeader:
+			return nil, fmt.Errorf("unexptected tar file (XHeader): type=%v name=%s", header.Typeflag, name)
+		default:
+			files = append(files, filetree.NewFileInfo(tr, header, name))
+		}
+	}
+
+	return files, nil
+}
+
+// Extract extracts a path from a tar.gz and can handle a set depth of nested tar.gz(s)
+func (i *Tar) Extract(r io.Reader, path string, depth int) error {
+
+	depth--
+
+	gz, err := gzip.NewReader(r)
+	if err != nil {
+		return err
+	}
+	defer gz.Close()
+
+	tr := tar.NewReader(gz)
+
+	for {
+		hdr, err := tr.Next()
+
+		if err == io.EOF {
+			break // End of archive
+		}
+		if err != nil {
+			return err
+		}
+
+		switch hdr.Typeflag {
+		case tar.TypeSymlink:
+		case tar.TypeReg:
+			switch filepath.Ext(hdr.Name) {
+			case ".tar":
+				if depth > 0 {
+					if err = i.Extract(tr, path, depth); err != nil {
+						return err
+					}
+				}
+			default:
+				if strings.HasSuffix(path, hdr.Name) {
+					os.MkdirAll(filepath.Dir(hdr.Name), os.ModePerm)
+					f, err := os.OpenFile(hdr.Name, os.O_CREATE|os.O_RDWR, os.FileMode(hdr.Mode))
+					if err != nil {
+						return err
+					}
+					defer f.Close()
+
+					if _, err := io.Copy(f, tr); err != nil {
+						return err
+					}
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+type nodeValue string
+
+func (nv nodeValue) String() string {
+	return string(nv)
+}
+
+// Nodes returns the filetree as widget treenodes
+func (i *Tar) Nodes() []*widgets.TreeNode {
+
+	var nodes []*widgets.TreeNode
+	// currentTree := 0
+
+	for _, layer := range i.Layers {
+		var treeNodes []*widgets.TreeNode
+		// tree := layer.Tree()
+		// visitor := func(node *filetree.FileNode) error {
+
+		// 	if !node.IsWhiteout() {
+		// 		sizer := func(curNode *filetree.FileNode) error {
+		// 			sizeBytes += curNode.Name
+		// 			return nil
+		// 		}
+		// 		previousTreeNode, err := tree.GetNode(node.Path())
+		// 		if err != nil {
+		// 			log.Debug(fmt.Sprintf("CurrentTree: %d : %s", currentTree, err))
+		// 		} else if previousTreeNode.Data.FileInfo.IsDir {
+		// 			err = previousTreeNode.VisitDepthChildFirst(sizer, nil)
+		// 			if err != nil {
+		// 				log.Errorf("unable to propagate dir: %+v", err)
+		// 			}
+		// 		}
+		// 	}
+
+		// 	data.Nodes = append(data.Nodes, node)
+
+		// 	return nil
+		// }
+		// visitEvaluator := func(node *filetree.FileNode) bool {
+		// 	return node.IsLeaf()
+		// }
+		// if err := tree.VisitDepthChildFirst(visitor, visitEvaluator); err != nil {
+		// 	return nil
+		// }
+
+		layer.Tree().VisitDepthChildFirst(func(node *filetree.FileNode) error {
+			for _, child := range node.Children {
+				if !child.IsWhiteout() {
+					treeNodes = append(treeNodes, &widgets.TreeNode{
+						Value: nodeValue(child.Path()),
+						// Nodes: child.Children,
+					})
+				}
+			}
+			return nil
+		}, nil)
+
+		nodes = append(nodes, &widgets.TreeNode{
+			Value: nodeValue(layer.TarID()),
+			Nodes: treeNodes,
+		})
+	}
+
+	return nodes
 }
