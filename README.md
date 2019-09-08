@@ -20,7 +20,7 @@ This project was created for people whom can't install docker on their desktops,
 
 ## Getting Started
 
-```
+``` 
 Usage: graboid [OPTIONS] COMMAND [arg...]
 
 Docker Image Downloader
@@ -61,7 +61,7 @@ $ graboid tags blacktop/scifgif
       • latest
 ```
 
-### Download the docker image `blacktop/scifgif`
+### Download the docker image `blacktop/scifgif` 
 
 ``` sh
 $ graboid blacktop/scifgif:latest
@@ -81,11 +81,11 @@ $ graboid --proxy http://proxy.org:[PORT] blacktop/scifgif:latest
 
 ### Extract a file from the image's filesystem :construction: :new:
 
-```sh
+``` sh
 $ graboid extract blacktop/ghidra:beta
 ```
 
-> **NOTE:** Press <enter> to expand a layer and press <space> to extract file *(will also make surrounding folders)*
+> **NOTE:** Press `<enter>` to expand a layer and press `<space>` to extract file *(will also make surrounding folders)*
 
 ![extract](https://github.com/blacktop/graboid/raw/master/docs/extract.png)
 
