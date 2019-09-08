@@ -2,17 +2,21 @@
 
 # graboid
 
-[![Circle CI](https://circleci.com/gh/blacktop/graboid.png?style=shield)](https://circleci.com/gh/blacktop/graboid) [![Build status](https://ci.appveyor.com/api/projects/status/go99ieg0mqpmyi7g?svg=true)](https://ci.appveyor.com/project/blacktop/graboid) [![Github All Releases](https://img.shields.io/github/downloads/blacktop/graboid/total.svg)](https://github.com/blacktop/graboid) [![GitHub release](https://img.shields.io/github/release/blacktop/graboid.svg)](https://github.com/blacktop/graboid/releases) [![License](http://img.shields.io/:license-mit-blue.svg)](http://doge.mit-license.org)
+[![Circle CI](https://circleci.com/gh/blacktop/graboid.png?style=shield)](https://circleci.com/gh/blacktop/graboid) [![Build status](https://ci.appveyor.com/api/projects/status/go99ieg0mqpmyi7g?svg=true)](https://ci.appveyor.com/project/blacktop/graboid) [![Github All Releases](https://img.shields.io/github/downloads/blacktop/graboid/total.svg)](https://github.com/blacktop/graboid/releases/latest) [![GitHub release](https://img.shields.io/github/release/blacktop/graboid.svg)](https://github.com/blacktop/graboid/releases) [![License](http://img.shields.io/:license-mit-blue.svg)](http://doge.mit-license.org)
 
 > ~~Client~~**LESS** Docker Image Downloader
 
 ---
 
-## Install
+### macOS
 
-* On [Mac](https://github.com/blacktop/graboid/blob/master/docs/macos.md)
-* On [Linux](https://github.com/blacktop/graboid/blob/master/docs/linux.md)
-* On [Windows](https://github.com/blacktop/graboid/blob/master/docs/windows.md)
+``` bash
+$ brew install blacktop/tap/graboid
+```
+
+### linux/windows
+
+Download from [releases](https://github.com/blacktop/graboid/releases/latest)
 
 ## Why
 
