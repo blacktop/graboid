@@ -56,9 +56,7 @@ Run 'graboid COMMAND --help' for more information on a command.
 
 ``` sh
 $ graboid tags blacktop/scifgif
-```
 
-``` sh
    • Querying Registry image=blacktop/scifgif
    • Tags:
       • 0.2.0
