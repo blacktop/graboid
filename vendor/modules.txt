@@ -6,8 +6,8 @@ github.com/blacktop/ipsw/utils
 # github.com/cespare/xxhash v1.1.0
 github.com/cespare/xxhash
 # github.com/docker/docker v1.13.1
-github.com/docker/docker/api/types/container
 github.com/docker/docker/api/types/blkiodev
+github.com/docker/docker/api/types/container
 github.com/docker/docker/api/types/mount
 github.com/docker/docker/api/types/strslice
 # github.com/docker/go-connections v0.4.0
@@ -22,19 +22,19 @@ github.com/fatih/color
 github.com/fsnotify/fsnotify
 # github.com/gizak/termui/v3 v3.1.0
 github.com/gizak/termui/v3
-github.com/gizak/termui/v3/widgets
 github.com/gizak/termui/v3/drawille
+github.com/gizak/termui/v3/widgets
 # github.com/google/uuid v1.1.1
 github.com/google/uuid
 # github.com/hashicorp/hcl v1.0.0
 github.com/hashicorp/hcl
-github.com/hashicorp/hcl/hcl/printer
 github.com/hashicorp/hcl/hcl/ast
 github.com/hashicorp/hcl/hcl/parser
-github.com/hashicorp/hcl/hcl/token
-github.com/hashicorp/hcl/json/parser
+github.com/hashicorp/hcl/hcl/printer
 github.com/hashicorp/hcl/hcl/scanner
 github.com/hashicorp/hcl/hcl/strconv
+github.com/hashicorp/hcl/hcl/token
+github.com/hashicorp/hcl/json/parser
 github.com/hashicorp/hcl/json/scanner
 github.com/hashicorp/hcl/json/token
 # github.com/inconshreveable/mousetrap v1.0.0
@@ -45,9 +45,9 @@ github.com/konsorten/go-windows-terminal-sequences
 github.com/magiconair/properties
 # github.com/mattn/go-colorable v0.1.2
 github.com/mattn/go-colorable
-# github.com/mattn/go-isatty v0.0.8
+# github.com/mattn/go-isatty v0.0.9
 github.com/mattn/go-isatty
-# github.com/mattn/go-runewidth v0.0.3
+# github.com/mattn/go-runewidth v0.0.4
 github.com/mattn/go-runewidth
 # github.com/mitchellh/go-homedir v1.1.0
 github.com/mitchellh/go-homedir
@@ -55,7 +55,7 @@ github.com/mitchellh/go-homedir
 github.com/mitchellh/go-wordwrap
 # github.com/mitchellh/mapstructure v1.1.2
 github.com/mitchellh/mapstructure
-# github.com/nsf/termbox-go v0.0.0-20190121233118-02980233997d
+# github.com/nsf/termbox-go v0.0.0-20190817171036-93860e161317
 github.com/nsf/termbox-go
 # github.com/opencontainers/go-digest v1.0.0-rc1
 github.com/opencontainers/go-digest
@@ -80,9 +80,9 @@ github.com/spf13/jwalterweatherman
 github.com/spf13/pflag
 # github.com/spf13/viper v1.4.0
 github.com/spf13/viper
-# github.com/wagoodman/dive v0.8.0
+# github.com/wagoodman/dive v0.8.1
 github.com/wagoodman/dive/filetree
-# golang.org/x/sys v0.0.0-20190904154756-749cb33beabd
+# golang.org/x/sys v0.0.0-20190907184412-d223b2b6db03
 golang.org/x/sys/unix
 # golang.org/x/text v0.3.2
 golang.org/x/text/transform
