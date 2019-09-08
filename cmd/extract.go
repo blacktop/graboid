@@ -23,9 +23,11 @@ package cmd
 
 import (
 	"bufio"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/apex/log"
 	"github.com/blacktop/graboid/pkg/image"
@@ -35,6 +37,8 @@ import (
 	"github.com/gizak/termui/v3/widgets"
 	"github.com/spf13/cobra"
 )
+
+const instructions = "<q> Quit | <enter> Expand/Collapse | <space> Extract"
 
 // extractCmd represents the extract command
 var extractCmd = &cobra.Command{
@@ -54,7 +58,8 @@ var extractCmd = &cobra.Command{
 			log.Fatalf("file does not exist: %s", tarPath)
 		}
 
-		log.Info("[ANALYZING] Please wait...")
+		fmt.Println()
+		log.Infof(getFmtStr(), "[ANALYZING] Please wait...")
 
 		f, err := os.Open(tarPath)
 		if err != nil {
@@ -94,8 +99,8 @@ var extractCmd = &cobra.Command{
 		l.Title = "Layers"
 		l.TitleStyle.Fg = ui.ColorCyan
 		l.PaddingTop = 1
-		x, y := ui.TerminalDimensions()
-		l.SetRect(0, 0, x, y)
+		// x, y := ui.TerminalDimensions()
+		// l.SetRect(0, 0, x, y)
 
 		cmds := widgets.NewParagraph()
 		if len(i.Layers) > 0 {
@@ -110,7 +115,7 @@ var extractCmd = &cobra.Command{
 		// cmds.WrapText = false
 
 		t := widgets.NewParagraph()
-		t.Text = i.Tag
+		t.Text = strings.TrimPrefix(i.Tag, "library/")
 		t.Title = "Image"
 		t.PaddingTop = 1
 		t.PaddingLeft = 2
@@ -120,12 +125,25 @@ var extractCmd = &cobra.Command{
 		t.TextStyle.Fg = ui.ColorBlue
 		// t.Border = false
 
+		instrns := widgets.NewParagraph()
+		instrns.Text = instructions
+		// instructions.Title = "Keymap"
+		// instructions.PaddingTop = 1
+		instrns.PaddingLeft = 2
+		instrns.TitleStyle.Fg = ui.ColorCyan
+		instrns.TextStyle.Modifier = ui.ModifierBold
+		instrns.TextStyle.Fg = ui.ColorYellow
+		// instructions.Border = false
+
 		grid := ui.NewGrid()
 		termWidth, termHeight := ui.TerminalDimensions()
 		grid.SetRect(0, 0, termWidth, termHeight)
 		grid.Set(
 			ui.NewRow(1.0/1,
-				ui.NewCol(1.0/2, l),
+				ui.NewCol(1.0/2,
+					ui.NewRow(1.85/2, l),
+					ui.NewRow(0.15/2, instrns),
+				),
 				ui.NewCol(1.0/2,
 					ui.NewRow(0.2/2, t),
 					ui.NewRow(1.8/2, cmds),
@@ -147,7 +165,6 @@ var extractCmd = &cobra.Command{
 				for _, layer := range i.Layers {
 					if strings.EqualFold(l.SelectedNode().Value.String(), layer.TarID()) {
 						cmds.Text = layer.Command()
-						ui.Render(grid)
 					}
 				}
 			case "k", "<Up>":
@@ -155,7 +172,6 @@ var extractCmd = &cobra.Command{
 				for _, layer := range i.Layers {
 					if strings.EqualFold(l.SelectedNode().Value.String(), layer.TarID()) {
 						cmds.Text = layer.Command()
-						ui.Render(grid)
 					}
 				}
 			case "<C-d>":
@@ -173,10 +189,16 @@ var extractCmd = &cobra.Command{
 			case "<Home>":
 				l.ScrollTop()
 			case "<Space>":
+				instrns.Text = fmt.Sprintf("Extracting - %s", l.SelectedNode().Value.String())
+				ui.Render(grid)
 				f.Seek(0, 0)
 				if err := i.Extract(bufio.NewReader(f), l.SelectedNode().Value.String(), 2); err != nil {
 					return err
 				}
+				instrns.Text = "DONE!"
+				ui.Render(grid)
+				time.Sleep(1 * time.Second)
+				instrns.Text = instructions
 			case "<Enter>":
 				l.ToggleExpand()
 			case "G", "<End>":
@@ -187,7 +209,8 @@ var extractCmd = &cobra.Command{
 				l.CollapseAll()
 			case "<Resize>":
 				x, y := ui.TerminalDimensions()
-				l.SetRect(0, 0, x, y)
+				// l.SetRect(0, 0, x, y)
+				grid.SetRect(0, 0, x, y)
 			}
 
 			if previousKey == "g" {
@@ -196,7 +219,7 @@ var extractCmd = &cobra.Command{
 				previousKey = e.ID
 			}
 
-			ui.Render(l)
+			ui.Render(grid)
 		}
 	},
 }

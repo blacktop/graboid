@@ -30,12 +30,12 @@ jobs:
           key: go-modules-v1-{{ checksum "go.sum" }}
           paths:
             - "/go/pkg/mod"
-      - run: go run main.go blacktop/bro:latest
+      - run: go run main.go blacktop/zeek
       - run:
           name: Load image into docker
           command: |
-            docker load -i blacktop_bro.tar
+            docker load -i blacktop_zeek_latest.tar.gz
       - run:
           name: Test docker image
           command: |
-            docker run blacktop/bro -v
+            docker run blacktop/zeek -v

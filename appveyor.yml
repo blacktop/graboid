@@ -15,4 +15,5 @@ install:
   - go build github.com/blacktop/graboid
 
 test_script:
-  - graboid.exe blacktop/zeek:latest
+  - graboid.exe blacktop/zeek
+  - graboid.exe tags blacktop/elasticsearch

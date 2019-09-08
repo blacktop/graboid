@@ -159,7 +159,9 @@ var rootCmd = &cobra.Command{
 		}
 
 		// Get image manifest
-		log.Infof(getFmtStr(), "Initialize Registry")
+		log.WithFields(log.Fields{
+			"image": ImageName,
+		}).Infof(getFmtStr(), "Querying Registry")
 		registry := initRegistry(ImageName, insecure)
 
 		mF, err := registry.ReposManifests(ImageName, ImageTag)
@@ -191,7 +193,7 @@ var rootCmd = &cobra.Command{
 			log.Fatal(err.Error())
 		}
 
-		tarFile := fmt.Sprintf("%s.tar", strings.Replace(ImageName, "/", "_", 1))
+		tarFile := fmt.Sprintf("%s_%s.tar.gz", strings.Replace(ImageName, "/", "_", 1), ImageTag)
 		if runtime.GOOS == "windows" {
 			log.Infof("%s: %s", "CREATE docker image tarball", tarFile)
 		} else {

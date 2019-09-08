@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/dustin/go-humanize"
 	"github.com/gizak/termui/v3/widgets"
 	"github.com/wagoodman/dive/filetree"
 )
@@ -188,23 +189,34 @@ func (i *Tar) Extract(r io.Reader, path string, depth int) error {
 					}
 				}
 			default:
-				if strings.HasSuffix(path, hdr.Name) {
-					os.MkdirAll(filepath.Dir(hdr.Name), os.ModePerm)
-					f, err := os.OpenFile(hdr.Name, os.O_CREATE|os.O_RDWR, os.FileMode(hdr.Mode))
+				// fmt.Println(hdr.Name)
+				var name string
+				if hdr.Typeflag == tar.TypeSymlink {
+					name = hdr.Linkname
+				} else {
+					name = hdr.Name
+				}
+				if strings.Contains(path, name) {
+					// fmt.Println(name)
+					// fmt.Println(filepath.Dir(name))
+					// os.MkdirAll(filepath.Dir(name), os.ModePerm)
+					f, err := os.OpenFile(filepath.Base(name), os.O_CREATE|os.O_RDWR, 0644)
+					// f, err := os.OpenFile(name, os.O_CREATE|os.O_RDWR, os.FileMode(hdr.Mode)) // TODO
 					if err != nil {
 						return err
 					}
-					defer f.Close()
-
 					if _, err := io.Copy(f, tr); err != nil {
 						return err
 					}
+					f.Close()
+					return nil
 				}
 			}
 		}
 	}
 
 	return nil
+	// return fmt.Errorf("did not find path: %s", path)
 }
 
 type nodeValue string
@@ -254,8 +266,13 @@ func (i *Tar) Nodes() []*widgets.TreeNode {
 		layer.Tree().VisitDepthChildFirst(func(node *filetree.FileNode) error {
 			for _, child := range node.Children {
 				if !child.IsWhiteout() {
+					display := child.Path()
+					if child.Data.FileInfo.TypeFlag == tar.TypeSymlink || child.Data.FileInfo.TypeFlag == tar.TypeLink {
+						display += " → " + child.Data.FileInfo.Linkname
+					}
+					display += fmt.Sprintf(" (%s)", humanize.Bytes(uint64(child.Data.FileInfo.Size)))
 					treeNodes = append(treeNodes, &widgets.TreeNode{
-						Value: nodeValue(child.Path()),
+						Value: nodeValue(display),
 						// Nodes: child.Children,
 					})
 				}

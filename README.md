@@ -74,7 +74,7 @@ $ graboid blacktop/scifgif:latest
 Import image into docker
 
 ``` sh
-$ docker load -i blacktop_scifgif.tar
+$ docker load -i blacktop_scifgif.tar.gz
 ```
 
 ### Download with a **Proxy**
@@ -86,10 +86,10 @@ $ graboid --proxy http://proxy.org:[PORT] blacktop/scifgif:latest
 ### Extract a file from the image's filesystem :construction: :new:
 
 ``` sh
-$ graboid extract blacktop/ghidra:beta
+$ graboid extract blacktop_ghidra_beta.tar.gz
 ```
 
-> **NOTE:** Press `<enter>` to expand a layer and press `<space>` to extract file *(will also make surrounding folders)*
+> **NOTE:** Press `<enter>` to expand a layer and press `<space>` to extract file
 
 ![extract](https://github.com/blacktop/graboid/raw/master/docs/extract.png)
 
