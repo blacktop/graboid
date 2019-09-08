@@ -38,4 +38,4 @@ jobs:
       - run:
           name: Test docker image
           command: |
-            docker run blacktop/zeek -v
+            docker run -it --rm blacktop/zeek -v
