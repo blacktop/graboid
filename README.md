@@ -53,12 +53,12 @@ $ graboid tags blacktop/scifgif
 ```
 
 ``` sh
-
-* Repository: blacktop/scifgif
-* Tags:
-
-    0.2.0
-    latest
+   • Querying Registry image=blacktop/scifgif
+   • Tags:
+      • 0.2.0
+      • 0.3.0
+      • 1.0
+      • latest
 ```
 
 ### Download the docker image `blacktop/scifgif`
