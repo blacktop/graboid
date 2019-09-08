@@ -26,30 +26,30 @@ This project was created for people whom can't install docker on their desktops,
 
 ## Getting Started
 
-``` 
-Usage: graboid [OPTIONS] COMMAND [arg...]
+``` sh
+$ graboid --help
 
 Docker Image Downloader
 
-Version: 0.14.0, BuildTime: 20170816
-Author: blacktop - <https://github.com/blacktop>
+Usage:
+  graboid [flags]
+  graboid [command]
 
-Options:
-  --verbose, -V     verbose output
-  --index value     override index endpoint (default: "https://index.docker.io") [$GRABOID_INDEX]
-  --registry value  override registry endpoint [$GRABOID_REGISTRY]
-  --proxy value     HTTP/HTTPS proxy [$GRABOID_PROXY]
-  --insecure        do not verify ssl certs
-  --user value      registry username [$GRABOID_USERNAME]
-  --password value  registry password [$GRABOID_PASSWORD]
-  --help, -h        show help
-  --version, -v     print the version
+Available Commands:
+  extract     Extract files from image
+  help        Help about any command
+  tags        List image tags
 
-Commands:
-  tags  List image tags
-  help  Shows a list of commands or help for one command
+Flags:
+      --config string     config file (default is $HOME/.graboid.yaml)
+  -h, --help              help for graboid
+      --index string      override index endpoint (default "https://index.docker.io")
+      --insecure          do not verify ssl certs
+      --proxy string      HTTP/HTTPS proxy
+      --registry string   override registry endpoint
+  -V, --verbose           verbose output
 
-Run 'graboid COMMAND --help' for more information on a command.
+Use "graboid [command] --help" for more information about a command.
 ```
 
 ### List available image tags
