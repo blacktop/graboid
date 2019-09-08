@@ -20,7 +20,7 @@ This project was created for people whom can't install docker on their desktops,
 
 ## Getting Started
 
-``` 
+```
 Usage: graboid [OPTIONS] COMMAND [arg...]
 
 Docker Image Downloader
@@ -61,7 +61,7 @@ $ graboid tags blacktop/scifgif
     latest
 ```
 
-### Download the docker image `blacktop/scifgif` 
+### Download the docker image `blacktop/scifgif`
 
 ``` sh
 $ graboid blacktop/scifgif:latest
@@ -79,17 +79,25 @@ $ docker load -i blacktop_scifgif.tar
 $ graboid --proxy http://proxy.org:[PORT] blacktop/scifgif:latest
 ```
 
-### TODO
+### Extract a file from the image's filesystem
+
+```sh
+$ graboid extract blacktop/ghidra:beta
+```
+
+![extract](https://github.com/blacktop/graboid/raw/master/docs/extract.png)
+
+## TODO
 
 * [ ] parallelize the layer downloads to decrease the total time to download large images
 * [ ] add image signature verification ([Notary](https://github.com/docker/notary)?)
 * [x] ensure support for long connections for large downloads
 
-### Issues
+## Issues
 
 Find a bug? Want more features? Find something missing in the documentation? Let me know! Please don't hesitate to [file an issue](https://github.com/blacktop/graboid/issues/new)
 
-### License
+## License
 
 MIT Copyright (c) 2017 **blacktop**
 

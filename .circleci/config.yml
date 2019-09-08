@@ -30,7 +30,7 @@ jobs:
           key: go-modules-v1-{{ checksum "go.sum" }}
           paths:
             - "/go/pkg/mod"
-      - run: go run *.go blacktop/bro:latest
+      - run: go run main.go blacktop/bro:latest
       - run:
           name: Load image into docker
           command: |

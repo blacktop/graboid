@@ -22,14 +22,22 @@ THE SOFTWARE.
 package cmd
 
 import (
+	"archive/tar"
+	"compress/gzip"
+	"encoding/json"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"os"
+	"path/filepath"
 	"runtime"
+	"strings"
 
 	"github.com/spf13/cobra"
 
 	"github.com/apex/log"
 	clihander "github.com/apex/log/handlers/cli"
+	"github.com/blacktop/graboid/pkg/image"
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/viper"
 )
@@ -42,6 +50,10 @@ var (
 	IndexDomain string
 	// RegistryDomain is the registry domain
 	RegistryDomain string
+	// ImageName is the docker image to pull
+	ImageName string
+	// ImageTag is the docker image tag to pull
+	ImageTag string
 )
 
 func getFmtStr() string {
@@ -51,14 +63,146 @@ func getFmtStr() string {
 	return "\033[1m%s\033[0m"
 }
 
+func createManifest(tempDir, confFile string, layerFiles []string) (string, error) {
+	var manifestArray []image.Manifest
+	// Create the file
+	tmpfn := filepath.Join(tempDir, "manifest.json")
+	out, err := os.Create(tmpfn)
+	if err != nil {
+		log.WithError(err).Error("create manifest JSON failed")
+	}
+	defer out.Close()
+
+	m := image.Manifest{
+		Config:   confFile,
+		Layers:   layerFiles,
+		RepoTags: []string{ImageName + ":" + ImageTag},
+	}
+	manifestArray = append(manifestArray, m)
+	mJSON, err := json.Marshal(manifestArray)
+	if err != nil {
+		log.WithError(err).Error("marshalling manifest JSON failed")
+	}
+	// Write the body to JSON file
+	_, err = out.Write(mJSON)
+	if err != nil {
+		log.WithError(err).Error("writing manifest JSON failed")
+	}
+
+	return tmpfn, nil
+}
+
+func tarFiles(srcDir, tarName string) error {
+	tarfile, err := os.Create(tarName)
+	if err != nil {
+		return err
+	}
+	defer tarfile.Close()
+
+	gw := gzip.NewWriter(tarfile)
+	defer gw.Close()
+	tarball := tar.NewWriter(gw)
+	defer tarball.Close()
+
+	return filepath.Walk(srcDir,
+		func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+
+			header, err := tar.FileInfoHeader(info, info.Name())
+			if err != nil {
+				return err
+			}
+			if err = tarball.WriteHeader(header); err != nil {
+				return err
+			}
+
+			if info.IsDir() {
+				return nil
+			}
+
+			log.WithField("path", path).Debug("taring file")
+			file, err := os.Open(path)
+			if err != nil {
+				return err
+			}
+			defer file.Close()
+			_, err = io.Copy(tarball, file)
+			return err
+		})
+}
+
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "graboid",
 	Short: "Docker Image Downloader",
-	// Uncomment the following line if your bare application
-	// has an action associated with it:
-	Run: func(cmd *cobra.Command, args []string) {
+	Args:  cobra.MinimumNArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
 
+		if Verbose {
+			log.SetLevel(log.DebugLevel)
+		}
+		insecure, _ := cmd.Flags().GetBool("insecure")
+
+		if strings.Contains(args[0], ":") {
+			imageParts := strings.Split(args[0], ":")
+			ImageName = imageParts[0]
+			ImageTag = imageParts[1]
+		} else {
+			ImageName = args[0]
+			ImageTag = "latest"
+		}
+		// test for official image name
+		if !strings.Contains(ImageName, "/") {
+			ImageName = "library/" + ImageName
+		}
+
+		// Get image manifest
+		log.Infof(getFmtStr(), "Initialize Registry")
+		registry := initRegistry(ImageName, insecure)
+
+		mF, err := registry.ReposManifests(ImageName, ImageTag)
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+
+		dir, err := ioutil.TempDir("", "graboid")
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+		defer os.RemoveAll(dir) // clean up
+
+		log.Infof(getFmtStr(), "GET CONFIG")
+		cfile, err := registry.RepoGetConfig(dir, ImageName, mF)
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+
+		log.Infof(getFmtStr(), "GET LAYERS")
+		lfiles, err := registry.RepoGetLayers(dir, ImageName, mF)
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+
+		log.Infof(getFmtStr(), "CREATE manifest.json")
+		_, err = createManifest(dir, cfile, lfiles)
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+
+		tarFile := fmt.Sprintf("%s.tar", strings.Replace(ImageName, "/", "_", 1))
+		if runtime.GOOS == "windows" {
+			log.Infof("%s: %s", "CREATE docker image tarball", tarFile)
+		} else {
+			log.Infof("\033[1m%s:\033[0m \033[34m%s\033[0m", "CREATE docker image tarball", tarFile)
+		}
+		err = tarFiles(dir, tarFile)
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+		log.Infof("\033[1mSUCCESS!\033[0m")
+		return nil
 	},
 }
 

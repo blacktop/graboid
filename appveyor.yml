@@ -9,7 +9,7 @@ environment:
   GOPATH: c:\gopath
   CGO_ENABLED: 0
 
-stack: go 1.10
+stack: go 1.13
 
 install:
   - go build github.com/blacktop/graboid

@@ -127,8 +127,8 @@ var extractCmd = &cobra.Command{
 			ui.NewRow(1.0/1,
 				ui.NewCol(1.0/2, l),
 				ui.NewCol(1.0/2,
-					ui.NewRow(0.15/2, t),
-					ui.NewRow(1.85/2, cmds),
+					ui.NewRow(0.2/2, t),
+					ui.NewRow(1.8/2, cmds),
 				),
 			),
 		)
