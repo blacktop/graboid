@@ -75,7 +75,7 @@ ci: lint test ## Run all the tests and code checks
 
 build: ## Build a beta version of malice
 	@echo "===> Building Binaries"
-	go build
+	go build -mod=vendor
 
 clean: ## Clean up artifacts
 	rm *.tar
