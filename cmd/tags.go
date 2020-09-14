@@ -30,29 +30,27 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func initRegistry(reposName string, insecure bool) *registry.Registry {
+func initRegistry(reposName string, insecure bool, username string, password string) *registry.Registry {
 	config := registry.Config{
-		Endpoint:       IndexDomain,
-		RegistryDomain: RegistryDomain,
+		Endpoint:       config.IndexUrl,
+		RegistryDomain: config.RegistryDomain,
 		Proxy:          "",
 		// Proxy:          Proxy,
 		Insecure: insecure,
 		RepoName: reposName,
-		Username: "",
-		Password: "",
-		// Username:       user,
-		// Password:       passwd,
+		Username: username,
+		Password: password,
 	}
-	registry, err := registry.New(config)
+	reg, err := registry.New(config)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
 	log.Debug("getting auth token")
-	err = registry.GetToken()
+	err = reg.GetToken()
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	return registry
+	return reg
 }
 
 // tagsCmd represents the tags command
@@ -62,12 +60,12 @@ var tagsCmd = &cobra.Command{
 	Args:  cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 
-		if Verbose {
+		if config.Verbose {
 			log.SetLevel(log.DebugLevel)
 		}
 		insecure, _ := cmd.Flags().GetBool("insecure")
 
-		registry := initRegistry(strings.Split(args[0], ":")[0], insecure)
+		registry := initRegistry(strings.Split(args[0], ":")[0], insecure, config.Username, config.Password)
 
 		tags, err := registry.ReposTags(strings.Split(args[0], ":")[0])
 		if err != nil {
