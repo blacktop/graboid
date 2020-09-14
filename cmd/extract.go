@@ -32,7 +32,6 @@ import (
 	"github.com/apex/log"
 	"github.com/blacktop/graboid/pkg/image"
 
-	// "github.com/dustin/go-humanize"
 	ui "github.com/gizak/termui/v3"
 	"github.com/gizak/termui/v3/widgets"
 	"github.com/spf13/cobra"
@@ -48,7 +47,7 @@ var extractCmd = &cobra.Command{
 	Args:  cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 
-		if Verbose {
+		if config.Verbose {
 			log.SetLevel(log.DebugLevel)
 		}
 

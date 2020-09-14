@@ -27,7 +27,7 @@ var (
 	Version string
 	// BuildTime stores the plugin's build time
 	BuildTime string
-	// IndexDomain is the index domain
+	// IndexUrl is the index domain
 	IndexDomain string
 	// RegistryDomain is the registry domain
 	RegistryDomain string

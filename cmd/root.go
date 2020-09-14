@@ -38,23 +38,27 @@ import (
 	"github.com/apex/log"
 	clihander "github.com/apex/log/handlers/cli"
 	"github.com/blacktop/graboid/pkg/image"
-	homedir "github.com/mitchellh/go-homedir"
+	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/viper"
 )
 
-var (
-	cfgFile string
+var config struct {
+	File string
 	// Verbose boolean flag for verbose logging
 	Verbose bool
-	// IndexDomain is the index domain
-	IndexDomain string
+	// IndexUrl is the index domain
+	IndexUrl string
 	// RegistryDomain is the registry domain
 	RegistryDomain string
 	// ImageName is the docker image to pull
 	ImageName string
 	// ImageTag is the docker image tag to pull
 	ImageTag string
-)
+
+	// Registry Authentication
+	Username string
+	Password string
+}
 
 func getFmtStr() string {
 	if runtime.GOOS == "windows" {
@@ -76,7 +80,7 @@ func createManifest(tempDir, confFile string, layerFiles []string) (string, erro
 	m := image.Manifest{
 		Config:   confFile,
 		Layers:   layerFiles,
-		RepoTags: []string{ImageName + ":" + ImageTag},
+		RepoTags: []string{config.ImageName + ":" + config.ImageTag},
 	}
 	manifestArray = append(manifestArray, m)
 	mJSON, err := json.Marshal(manifestArray)
@@ -140,31 +144,31 @@ var rootCmd = &cobra.Command{
 	Args:  cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 
-		if Verbose {
+		if config.Verbose {
 			log.SetLevel(log.DebugLevel)
 		}
 		insecure, _ := cmd.Flags().GetBool("insecure")
 
 		if strings.Contains(args[0], ":") {
 			imageParts := strings.Split(args[0], ":")
-			ImageName = imageParts[0]
-			ImageTag = imageParts[1]
+			config.ImageName = imageParts[0]
+			config.ImageTag = imageParts[1]
 		} else {
-			ImageName = args[0]
-			ImageTag = "latest"
+			config.ImageName = args[0]
+			config.ImageTag = "latest"
 		}
-		// test for official image name
-		if !strings.Contains(ImageName, "/") {
-			ImageName = "library/" + ImageName
+		// test for official image name (Docker Registry specific)
+		if !strings.Contains(config.ImageName, "/") && config.RegistryDomain == "" {
+			config.ImageName = "library/" + config.ImageName
 		}
 
 		// Get image manifest
 		log.WithFields(log.Fields{
-			"image": ImageName,
+			"image": config.ImageName,
 		}).Infof(getFmtStr(), "Querying Registry")
-		registry := initRegistry(ImageName, insecure)
+		registry := initRegistry(config.ImageName, insecure, config.Username, config.Password)
 
-		mF, err := registry.ReposManifests(ImageName, ImageTag)
+		mF, err := registry.ReposManifests(config.ImageName, config.ImageTag)
 		if err != nil {
 			log.Fatal(err.Error())
 		}
@@ -176,13 +180,13 @@ var rootCmd = &cobra.Command{
 		defer os.RemoveAll(dir) // clean up
 
 		log.Infof(getFmtStr(), "GET CONFIG")
-		cfile, err := registry.RepoGetConfig(dir, ImageName, mF)
+		cfile, err := registry.RepoGetConfig(dir, config.ImageName, mF)
 		if err != nil {
 			log.Fatal(err.Error())
 		}
 
 		log.Infof(getFmtStr(), "GET LAYERS")
-		lfiles, err := registry.RepoGetLayers(dir, ImageName, mF)
+		lfiles, err := registry.RepoGetLayers(dir, config.ImageName, mF)
 		if err != nil {
 			log.Fatal(err.Error())
 		}
@@ -193,7 +197,11 @@ var rootCmd = &cobra.Command{
 			log.Fatal(err.Error())
 		}
 
-		tarFile := fmt.Sprintf("%s_%s.tar.gz", strings.Replace(ImageName, "/", "_", 1), ImageTag)
+		tarFile := fmt.Sprintf("%s_%s.tar.gz",
+			strings.Replace(config.ImageName, "/", "_", 1),
+			config.ImageTag,
+		)
+
 		if runtime.GOOS == "windows" {
 			log.Infof("%s: %s", "CREATE docker image tarball", tarFile)
 		} else {
@@ -225,24 +233,22 @@ func init() {
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.graboid.yaml)")
+	rootCmd.PersistentFlags().StringVar(&config.File, "config", "", "config file (default is $HOME/.graboid.yaml)")
+	rootCmd.PersistentFlags().StringVar(&config.IndexUrl, "index", "", "override index endpoint")
+	rootCmd.PersistentFlags().StringVar(&config.RegistryDomain, "registry", "", "override registry endpoint")
+	rootCmd.PersistentFlags().StringVar(&config.Username, "username", "", "Username")
+	rootCmd.PersistentFlags().StringVar(&config.Password, "password", "", "Password")
+	rootCmd.PersistentFlags().BoolVarP(&config.Verbose, "verbose", "V", false, "verbose output")
 
-	rootCmd.PersistentFlags().StringVar(&IndexDomain, "index", "https://index.docker.io", "override index endpoint")
-	rootCmd.PersistentFlags().StringVar(&RegistryDomain, "registry", "", "override registry endpoint")
-	rootCmd.PersistentFlags().BoolVarP(&Verbose, "verbose", "V", false, "verbose output")
-
-	// Cobra also supports local flags, which will only run
-	// when this action is called directly.
-	// rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 	rootCmd.Flags().String("proxy", "", "HTTP/HTTPS proxy")
 	rootCmd.Flags().Bool("insecure", false, "do not verify ssl certs")
 }
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
-	if cfgFile != "" {
+	if config.File != "" {
 		// Use config file from the flag.
-		viper.SetConfigFile(cfgFile)
+		viper.SetConfigFile(config.File)
 	} else {
 		// Find home directory.
 		home, err := homedir.Dir()
@@ -251,15 +257,36 @@ func initConfig() {
 			os.Exit(1)
 		}
 
-		// Search config in home directory with name ".graboid" (without extension).
+		// Search config in home directory with name ".graboid.{yml,json,yaml,...}".
 		viper.AddConfigPath(home)
 		viper.SetConfigName(".graboid")
 	}
 
-	viper.AutomaticEnv() // read in environment variables that match
-
 	// If a config file is found, read it in.
-	if err := viper.ReadInConfig(); err == nil {
+	err := viper.ReadInConfig(); if err == nil {
 		fmt.Println("Using config file:", viper.ConfigFileUsed())
 	}
+
+
+	// Set config entries from file, or defaults
+	if viper.GetString("index") == "" {
+		config.IndexUrl = "https://index.docker.io"
+	} else {
+		config.IndexUrl = viper.GetString("index")
+	}
+
+	if viper.GetString("registry") == "" {
+		config.RegistryDomain = "https://registry-1.docker.com"
+	} else {
+		config.RegistryDomain = viper.GetString("registry")
+	}
+
+	if viper.GetString("username") != "" {
+		config.Username = viper.GetString("username")
+	}
+
+	if viper.GetString("password") != "" {
+		config.Password = viper.GetString("password")
+	}
+
 }

@@ -2,6 +2,7 @@ package registry
 
 import (
 	"crypto/tls"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -10,6 +11,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
@@ -43,7 +45,7 @@ type auth struct {
 	Token       string    `json:"token,omitempty"`
 	AccessToken string    `json:"access_token,omitempty"`
 	ExpiresIn   int       `json:"expires_in,omitempty"`
-	IssuedAt    time.Time `json:"issued_at,omitempty"`
+	IssuedAt    *time.Time `json:"issued_at,omitempty"`
 }
 
 // Tags is the image tags struct
@@ -85,7 +87,10 @@ func getProxy(proxy string) func(*http.Request) (*url.URL, error) {
 
 // TokenExpired returns wheither or not an auth token has expired
 func (reg *Registry) TokenExpired() bool {
-	duration := time.Since(reg.Auth.IssuedAt)
+	if reg.Auth.IssuedAt == nil {
+		return false
+	}
+	duration := time.Since(*reg.Auth.IssuedAt)
 	if int(duration.Seconds()) > reg.Auth.ExpiresIn {
 		log.Warn("auth token expired")
 		return true
@@ -129,9 +134,49 @@ func New(rc Config) (*Registry, error) {
 		Config:       rc}, nil
 }
 
-// GetToken retrives a docker registry API pull token
+// GetToken retrieves a docker registry API pull token
 func (reg *Registry) GetToken() error {
-	u := fmt.Sprintf("https://auth.docker.io/token?service=registry.docker.io&scope=repository:%s:pull", reg.Config.RepoName)
+	baseUrl, err := reg.getUrl("/v2/")
+	if err != nil {
+		return err
+	}
+
+	req, err  := http.NewRequest("GET", baseUrl.String(), nil)
+	if err != nil {
+		return err
+	}
+
+	res, err := reg.client.Do(req)
+	if err != nil {
+		return err
+	}
+
+	if res.StatusCode == http.StatusUnauthorized {
+		// Authentication failed
+		// Log-in to specified realm
+
+		unableToAuth := func(err error) error {
+			return fmt.Errorf("unable to authenticate with %s: %v", baseUrl, err)
+		}
+
+		wwwAuthHeader := getWwwAuthHeader(res)
+
+		if wwwAuthHeader == "" {
+			return unableToAuth(fmt.Errorf("WWW-Authenticate header is missing"))
+		}
+
+		authHeader, err := parseAuthHeader(wwwAuthHeader)
+		if err != nil {
+			return unableToAuth(err)
+		}
+
+		err = reg.authenticate(authHeader.Scheme, authHeader.Realm)
+		if err != nil {
+			return unableToAuth(err)
+		}
+	}
+
+	/*u := fmt.Sprintf("https://auth.docker.io/token?service=registry.docker.io&scope=repository:%s:pull", reg.Config.RepoName)
 	req, err := http.NewRequest("GET", u, nil)
 	if err != nil {
 		return err
@@ -161,9 +206,53 @@ func (reg *Registry) GetToken() error {
 	}
 
 	reg.Auth = *a
-	log.WithField("token", a.Token).Debugf("got token")
+	log.WithField("token", a.Token).Debugf("got token")*/
 
 	return nil
+}
+
+func getWwwAuthHeader(res *http.Response) string {
+	var wwwAuthHeader string
+	for k, v := range res.Header {
+		if strings.ToLower(k) == strings.ToLower("WWW-Authenticate") {
+			wwwAuthHeader = v[0]
+			break
+		}
+	}
+	return wwwAuthHeader
+}
+
+type AuthHeader struct {
+	Scheme string
+	Realm  string
+	Other map[string]string
+}
+
+func parseAuthHeader(header string) (*AuthHeader, error) {
+	authHeaderRegex := regexp.MustCompile("^(\\S+) realm=\"(.*?)\"(?:,(.*)|)$")
+	if !authHeaderRegex.MatchString(header) {
+		return nil, fmt.Errorf("invalid WWW-Authenticate header")
+	}
+
+
+
+	matches := authHeaderRegex.FindAllStringSubmatch(header, -1)
+	other := strings.Split(matches[0][3], ",")
+
+	var splitOthers = map[string]string{}
+
+	for _, v := range other {
+		split := strings.Split(v, "=")
+		if len(split) == 2 {
+			splitOthers[split[0]] = split[1]
+		}
+	}
+
+	return &AuthHeader{
+		Scheme: matches[0][1],
+		Realm: matches[0][2],
+		Other: splitOthers,
+	}, nil
 }
 
 func (reg *Registry) doGet(url string, headers map[string]string) (*http.Response, error) {
@@ -189,18 +278,33 @@ func (reg *Registry) doGet(url string, headers map[string]string) (*http.Respons
 	return res, nil
 }
 
+// getUrl returns an url using the registry URL
+func (reg *Registry) getUrl(path string) (*url.URL, error) {
+	requestUri, err := url.ParseRequestURI(path)
+	if err != nil {
+		return nil, err
+	}
+	return reg.URL.ResolveReference(requestUri), nil
+}
+
 // ReposTags gets a list of the docker image tags
 func (reg *Registry) ReposTags(reposName string) (*Tags, error) {
-	url := fmt.Sprintf("https://registry-1.docker.io/v2/%s/tags/list", reposName)
+	tagsListUrl, err := reg.getUrl(fmt.Sprintf("/v2/%s/tags/list", reposName))
+	if err != nil {
+		return nil, err
+	}
 
 	if reg.TokenExpired() {
-		reg.GetToken()
+		err = reg.GetToken()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	log.WithFields(log.Fields{
-		"url": url,
+		"regUrl": tagsListUrl.String(),
 	}).Debug("downloading tags")
-	res, err := reg.doGet(url, nil)
+	res, err := reg.doGet(tagsListUrl.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -222,20 +326,27 @@ func (reg *Registry) ReposTags(reposName string) (*Tags, error) {
 // ReposManifests gets docker image manifest for name:tag
 func (reg *Registry) ReposManifests(reposName, repoTag string) (*Manifests, error) {
 	headers := make(map[string]string)
-	url := fmt.Sprintf("%s/v2/%s/manifests/%s", reg.Host, reposName, repoTag)
+	manifestUrl, err := reg.getUrl(fmt.Sprintf("/v2/%s/manifests/%s", reposName, repoTag))
+	if err != nil {
+		return nil, err
+	}
+
 	headers["Accept"] = "application/vnd.docker.distribution.manifest.v2+json"
 	log.WithFields(log.Fields{
-		"url":     url,
+		"manifestUrl":     manifestUrl,
 		"headers": headers,
 		"image":   reposName,
 		"tag":     repoTag,
 	}).Debug("get manifests")
 
 	if reg.TokenExpired() {
-		reg.GetToken()
+		err := reg.GetToken()
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	res, err := reg.doGet(url, headers)
+	res, err := reg.doGet(manifestUrl.String(), headers)
 	if err != nil {
 		return nil, err
 	}
@@ -331,4 +442,56 @@ func (reg *Registry) RepoGetLayers(tempDir, reposName string, manifest *Manifest
 	}
 
 	return layerFiles, nil
+}
+
+func (reg *Registry) authenticate(scheme string, realm string) error {
+
+	if scheme != "Bearer" && scheme != "Basic" {
+		return fmt.Errorf("unable to authenticate, sorry, scheme %s is not supported yet", scheme)
+	}
+
+	req, err  := http.NewRequest("GET", realm, nil)
+	if err != nil {
+		return err
+	}
+
+	userColonPassword := fmt.Sprintf("%s:%s", reg.Config.Username, reg.Config.Password)
+	cred := base64.StdEncoding.EncodeToString([]byte(userColonPassword))
+	req.Header.Add("Authorization", scheme + " " + cred)
+
+	res, err := reg.client.Do(req)
+	if err != nil {
+		return err
+	}
+
+	if res.StatusCode == http.StatusUnauthorized {
+		// Artifactory?
+		wwwAuthHeader := getWwwAuthHeader(res)
+		if wwwAuthHeader == "" {
+			return fmt.Errorf("unable to authenticate, got Unauthorized after sending the credentials")
+		}
+
+		authHeader, err := parseAuthHeader(wwwAuthHeader)
+		if err != nil {
+			return fmt.Errorf("unable to parse WWW-Authenticate: %v", err)
+		}
+
+		if authHeader.Scheme == "Basic" && authHeader.Scheme != scheme {
+			// Yes, this is Artifactory
+			return reg.authenticate(authHeader.Scheme, realm)
+		} else {
+			return fmt.Errorf("unable to authenticate, got scheme %v", authHeader.Scheme)
+		}
+	}
+
+	// Response
+
+	jsonDec := json.NewDecoder(res.Body)
+
+	var authResponse auth
+	err = jsonDec.Decode(&authResponse)
+	reg.Auth = authResponse
+
+	return err
+
 }

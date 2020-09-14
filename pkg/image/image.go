@@ -13,7 +13,7 @@ import (
 
 	"github.com/dustin/go-humanize"
 	"github.com/gizak/termui/v3/widgets"
-	"github.com/wagoodman/dive/filetree"
+	"github.com/wagoodman/dive/dive/filetree"
 )
 
 // Parse parses an image tar.gz file
@@ -148,7 +148,7 @@ func (i *Tar) getFileList(r io.Reader) ([]filetree.FileInfo, error) {
 		case tar.TypeXHeader:
 			return nil, fmt.Errorf("unexptected tar file (XHeader): type=%v name=%s", header.Typeflag, name)
 		default:
-			files = append(files, filetree.NewFileInfo(tr, header, name))
+			files = append(files, filetree.NewFileInfoFromTarHeader(tr, header, name))
 		}
 	}
 
