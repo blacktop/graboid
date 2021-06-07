@@ -29,13 +29,13 @@ dry_release:
 .PHONY: release
 release: ## Create a new release from the NEXT_VERSION
 	@echo " > Creating Release ${NEXT_VERSION}"
-	@hack/make/release ${NEXT_VERSION}
+	@.hack/make/release ${NEXT_VERSION}
 	@goreleaser --rm-dist
 
 .PHONY: release-minor
 release-minor: ## Create a new minor semver release
 	@echo " > Creating Release $(shell svu minor)"
-	@hack/make/release $(shell svu minor)
+	@.hack/make/release $(shell svu minor)
 	@goreleaser --rm-dist
 
 destroy: ## Remove release from the CUR_VERSION
