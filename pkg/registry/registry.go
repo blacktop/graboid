@@ -172,6 +172,7 @@ func (reg *Registry) doGet(url string, headers map[string]string) (*http.Respons
 		return nil, err
 	}
 	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", reg.Auth.Token))
+	req.Header.Add("User-Agent", "Docker-Client/18.06.0-ce (darwin)")
 	// add additional headers
 	if headers != nil {
 		for key, value := range headers {
