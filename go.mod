@@ -19,7 +19,6 @@ require (
 	github.com/spf13/cast v1.3.1 // indirect
 	github.com/spf13/cobra v1.1.3
 	github.com/spf13/viper v1.7.1
-	github.com/urfave/cli v1.22.5
 	github.com/wagoodman/dive v0.10.0
 	golang.org/x/sys v0.0.0-20210603125802-9665404d3644 // indirect
 	gopkg.in/cheggaaa/pb.v1 v1.0.28
