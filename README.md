@@ -1,12 +1,18 @@
-![logo](https://github.com/blacktop/graboid/raw/master/docs/graboids.jpg)
-
-# graboid
-
-[![Circle CI](https://circleci.com/gh/blacktop/graboid.png?style=shield)](https://circleci.com/gh/blacktop/graboid) [![Build status](https://ci.appveyor.com/api/projects/status/go99ieg0mqpmyi7g?svg=true)](https://ci.appveyor.com/project/blacktop/graboid) [![Github All Releases](https://img.shields.io/github/downloads/blacktop/graboid/total.svg)](https://github.com/blacktop/graboid/releases/latest) [![GitHub release](https://img.shields.io/github/release/blacktop/graboid.svg)](https://github.com/blacktop/graboid/releases) [![License](http://img.shields.io/:license-mit-blue.svg)](http://doge.mit-license.org)
-
-> ~~Client~~**LESS** Docker Image Downloader
-
----
+<p align="center">
+  <a href="https://github.com/blacktop/graboid"><img alt="graboid Logo" src="https://github.com/blacktop/graboid/raw/master/docs/graboids.jpg" height="200" /></a>
+  <h1 align="center">graboid</h1>
+  <h4><p align="center"><del>Client</del><b>LESS</b> Docker Image Downloader</p></h4>
+  <p align="center">
+    <a href="https://github.com/blacktop/graboid/actions?query=workflow%3AGo" alt="Actions">
+          <img src="https://github.com/blacktop/graboid/workflows/Go/badge.svg" /></a>
+    <a href="https://github.com/blacktop/graboid/releases/latest" alt="Downloads">
+          <img src="https://img.shields.io/github/downloads/blacktop/graboid/total.svg" /></a>
+    <a href="https://github.com/blacktop/graboid/releases" alt="GitHub Release">
+          <img src="https://img.shields.io/github/release/blacktop/graboid.svg" /></a>
+    <a href="http://doge.mit-license.org" alt="LICENSE">
+          <img src="https://img.shields.io/:license-mit-blue.svg" /></a>
+</p>
+<br>
 
 ## Install
 
@@ -65,7 +71,7 @@ $ graboid tags blacktop/scifgif
       • latest
 ```
 
-### Download the docker image `blacktop/scifgif` 
+### Download the docker image `blacktop/scifgif`
 
 ``` sh
 $ graboid blacktop/scifgif:latest
@@ -105,5 +111,5 @@ Find a bug? Want more features? Find something missing in the documentation? Let
 
 ## License
 
-MIT Copyright (c) 2017 **blacktop**
+MIT Copyright (c) 2017-2021 **blacktop**
 

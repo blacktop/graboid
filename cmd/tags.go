@@ -25,10 +25,21 @@ import (
 	"strings"
 
 	"github.com/apex/log"
+	"github.com/apex/log/handlers/cli"
 	"github.com/blacktop/graboid/pkg/registry"
-	"github.com/blacktop/ipsw/utils"
 	"github.com/spf13/cobra"
 )
+
+var normalPadding = cli.Default.Padding
+
+// Indent indents apex log line to supplied level
+func Indent(f func(s string), level int) func(string) {
+	return func(s string) {
+		cli.Default.Padding = normalPadding * level
+		f(s)
+		cli.Default.Padding = normalPadding
+	}
+}
 
 func initRegistry(reposName string, insecure bool) *registry.Registry {
 	config := registry.Config{
@@ -78,9 +89,9 @@ var tagsCmd = &cobra.Command{
 			"image": tags.Name,
 		}).Infof(getFmtStr(), "Querying Registry")
 
-		utils.Indent(log.Info, 1)("Tags:")
+		Indent(log.Info, 1)("Tags:")
 		for _, v := range tags.Tags {
-			utils.Indent(log.Info, 2)(v)
+			Indent(log.Info, 2)(v)
 		}
 
 		return nil

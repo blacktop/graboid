@@ -21,3 +21,4 @@ bro/
 *.gz
 ui/__debug_bin
 .DS_Store
+dist/
