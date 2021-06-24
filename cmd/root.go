@@ -144,6 +144,7 @@ var rootCmd = &cobra.Command{
 			log.SetLevel(log.DebugLevel)
 		}
 		insecure, _ := cmd.Flags().GetBool("insecure")
+		proxy, _ := cmd.Flags().GetString("proxy")
 
 		if strings.Contains(args[0], ":") {
 			imageParts := strings.Split(args[0], ":")
@@ -162,7 +163,7 @@ var rootCmd = &cobra.Command{
 		log.WithFields(log.Fields{
 			"image": ImageName,
 		}).Infof(getFmtStr(), "Querying Registry")
-		registry := initRegistry(ImageName, insecure)
+		registry := initRegistry(ImageName, proxy, insecure)
 
 		mF, err := registry.ReposManifests(ImageName, ImageTag)
 		if err != nil {

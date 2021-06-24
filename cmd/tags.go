@@ -41,16 +41,15 @@ func Indent(f func(s string), level int) func(string) {
 	}
 }
 
-func initRegistry(reposName string, insecure bool) *registry.Registry {
+func initRegistry(reposName, proxy string, insecure bool) *registry.Registry {
 	config := registry.Config{
 		Endpoint:       IndexDomain,
 		RegistryDomain: RegistryDomain,
-		Proxy:          "",
-		// Proxy:          Proxy,
-		Insecure: insecure,
-		RepoName: reposName,
-		Username: "",
-		Password: "",
+		Proxy:          proxy,
+		Insecure:       insecure,
+		RepoName:       reposName,
+		Username:       "",
+		Password:       "",
 		// Username:       user,
 		// Password:       passwd,
 	}
@@ -77,8 +76,9 @@ var tagsCmd = &cobra.Command{
 			log.SetLevel(log.DebugLevel)
 		}
 		insecure, _ := cmd.Flags().GetBool("insecure")
+		proxy, _ := cmd.Flags().GetString("proxy")
 
-		registry := initRegistry(strings.Split(args[0], ":")[0], insecure)
+		registry := initRegistry(strings.Split(args[0], ":")[0], proxy, insecure)
 
 		tags, err := registry.ReposTags(strings.Split(args[0], ":")[0])
 		if err != nil {

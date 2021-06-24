@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/net/http/httpproxy"
 	pb "gopkg.in/cheggaaa/pb.v1"
 
 	"github.com/apex/log"
@@ -78,8 +79,15 @@ func getProxy(proxy string) func(*http.Request) (*url.URL, error) {
 		if err != nil {
 			log.WithError(err).Error("bad proxy url")
 		}
+		log.Debugf("proxy set to: %s", proxyURL)
 		return http.ProxyURL(proxyURL)
 	}
+	conf := httpproxy.FromEnvironment()
+	log.WithFields(log.Fields{
+		"http_proxy":  conf.HTTPProxy,
+		"https_proxy": conf.HTTPSProxy,
+		"no_proxy":    conf.NoProxy,
+	}).Debugf("proxy info from environment")
 	return http.ProxyFromEnvironment
 }
 
