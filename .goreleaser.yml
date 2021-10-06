@@ -18,6 +18,7 @@ builds:
       - linux
     goarch:
       - amd64
+      - arm64
     ldflags: -s -w -X main.Version={{.Version}} -X main.BuildTime={{.Date}}
 
 archives:
