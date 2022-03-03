@@ -10,7 +10,7 @@ setup: ## Install all the build and lint dependencies
 	go get -u github.com/alecthomas/gometalinter
 	go install github.com/goreleaser/goreleaser
 	go get -u github.com/pierrre/gotestcover
-	go get -u github.com/spf13/cobra/cobra
+	go get -u github.com/spf13/cobra
 	go get -u golang.org/x/tools/cmd/cover
 	go get -u github.com/caarlos0/svu
 	gometalinter --install
